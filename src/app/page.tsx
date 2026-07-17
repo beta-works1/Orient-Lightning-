@@ -6,7 +6,6 @@ import { ProductRail } from "@/components/ProductRail";
 import { PromoBanners } from "@/components/PromoBanners";
 import { getDailyDealProducts, getFeaturedProducts } from "@/lib/catalog";
 import { SITE } from "@/lib/types";
-import { whatsappGeneralUrl } from "@/lib/format";
 
 export default function HomePage() {
   const featured = getFeaturedProducts(8);
@@ -23,22 +22,19 @@ export default function HomePage() {
             </h1>
             <p className="mt-4 text-base text-white/85 sm:text-lg">
               Residential, commercial and industrial LED lighting — powered by Photon Electric Pvt Ltd.
-              Online checkout is paused; order easily on WhatsApp.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
-              <a
-                href={whatsappGeneralUrl()}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="rounded-md bg-white px-5 py-2.5 text-sm font-semibold text-brand hover:bg-slate-100"
-              >
-                Chat on WhatsApp
-              </a>
               <Link
                 href="/collections/best-sellers"
-                className="rounded-md border border-white/40 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/10"
+                className="rounded-md bg-white px-5 py-2.5 text-sm font-semibold text-brand hover:bg-slate-100"
               >
                 Shop Best Sellers
+              </Link>
+              <Link
+                href="/collections/residential-lighting"
+                className="rounded-md border border-white/40 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/10"
+              >
+                Browse Residential
               </Link>
             </div>
           </div>

@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     template: `%s | ${SITE.name}`,
   },
   description:
-    "Orient Lighting by Photon Electric Pvt Ltd — residential, commercial and industrial LED lighting since 1996. Order via WhatsApp.",
+    "Orient Lighting by Photon Electric Pvt Ltd — residential, commercial and industrial LED lighting since 1996.",
   openGraph: {
     title: SITE.name,
     description: "LED lighting for homes, offices and industry across Pakistan.",

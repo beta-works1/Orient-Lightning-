@@ -65,9 +65,6 @@ export type Catalog = {
   meta?: Record<string, unknown>;
 };
 
-export const WHATSAPP_NUMBER =
-  process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "923001674368";
-
 export const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL || "https://orientlighting.com.pk";
 
@@ -81,8 +78,7 @@ export const SITE = {
   hours: "10AM–7PM Mon–Fri",
   address: "Gate #2, 26km Multan Rd, Maraka Village, Lahore, Punjab 54000",
   darazUrl: "https://www.daraz.pk/shop/orient-lighting/",
-  announcement:
-    "Online Orders Are Currently Not Available. Kindly Contact us on WhatsApp for Queries.",
+  announcement: "Free shipping on orders above Rs. 5,000 · 1-year warranty on LED products",
 };
 
 export const NAV = [

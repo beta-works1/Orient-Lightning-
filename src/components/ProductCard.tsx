@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Product } from "@/lib/types";
-import { formatPrice, whatsappProductUrl } from "@/lib/format";
+import { formatPrice } from "@/lib/format";
 
 export function ProductCard({ product }: { product: Product }) {
   const image = product.images[0];
@@ -39,14 +39,6 @@ export function ProductCard({ product }: { product: Product }) {
             </span>
           ) : null}
         </div>
-        <a
-          href={whatsappProductUrl(product.title, product.handle)}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-1 inline-flex items-center justify-center rounded-md bg-brand px-3 py-2 text-xs font-semibold text-white hover:bg-brand-navy"
-        >
-          Order via WhatsApp
-        </a>
       </div>
     </article>
   );

@@ -57,7 +57,7 @@ export default async function CollectionPage({ params, searchParams }: Props) {
           />
         ) : (
           <p className="mt-2 text-sm text-brand-muted">
-            Browse {collection.title} from Orient Lighting. Order via WhatsApp.
+            Browse {collection.title} from Orient Lighting.
           </p>
         )}
       </div>

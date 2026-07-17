@@ -174,7 +174,7 @@ function main() {
         id: "1",
         handle: "become-our-partner",
         title: "Become Our Partner",
-        body: "<p>Partner with Orient Lighting / Photon Electric Pvt Ltd. Contact sales@orientlighting.pk or WhatsApp +92 300 1674368.</p>",
+        body: "<p>Partner with Orient Lighting / Photon Electric Pvt Ltd. Contact sales@orientlighting.pk or call +92 300 1674368.</p>",
       },
       {
         id: "2",
@@ -205,7 +205,6 @@ function main() {
       source: "shopify-public-json",
       productCount: outProducts.length,
       collectionCount: outCollections.length,
-      whatsapp: "923001674368",
       generatedAt: new Date().toISOString(),
       shopifyFiles: readdirSync(shopifyDir).length,
     },

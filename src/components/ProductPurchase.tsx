@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { Product } from "@/lib/types";
-import { formatPrice, whatsappProductUrl } from "@/lib/format";
+import { formatPrice } from "@/lib/format";
 
 export function ProductPurchase({ product }: { product: Product }) {
   const [variantId, setVariantId] = useState(product.variants[0]?.id);
@@ -52,22 +52,6 @@ export function ProductPurchase({ product }: { product: Product }) {
           </div>
         </div>
       ) : null}
-
-      <a
-        href={whatsappProductUrl(
-          `${product.title}${variant && variant.title !== "Default Title" ? ` — ${variant.title}` : ""}`,
-          product.handle,
-        )}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-flex w-full items-center justify-center rounded-md bg-brand px-5 py-3 text-sm font-semibold text-white hover:bg-brand-navy sm:w-auto"
-      >
-        Order via WhatsApp
-      </a>
-
-      <p className="text-xs text-brand-muted">
-        Online orders are currently not available. Reach us on WhatsApp for pricing, stock and delivery.
-      </p>
     </div>
   );
 }
