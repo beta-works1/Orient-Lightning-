@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Montserrat, Oswald, Roboto } from "next/font/google";
 import { AnnouncementBar } from "@/components/AnnouncementBar";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { CompareProvider } from "@/components/compare/CompareProvider";
+import { CompareBar } from "@/components/compare/CompareBar";
+import { IntroGate } from "@/components/IntroGate";
 import { SITE, SITE_URL } from "@/lib/types";
 import "./globals.css";
 
@@ -44,12 +48,24 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={`${montserrat.variable} ${oswald.variable} ${roboto.variable} font-sans antialiased`}>
-        <AnnouncementBar />
-        <Header />
-        <main className="min-h-[60vh]">{children}</main>
-        <Footer />
+        <Script
+          id="orient-intro-gate"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{if(sessionStorage.getItem("orient-intro-seen")!=="1"){document.documentElement.classList.add("intro-pending");}}catch(e){document.documentElement.classList.add("intro-pending");}})();`,
+          }}
+        />
+        <CompareProvider>
+          <IntroGate>
+            <AnnouncementBar />
+            <Header />
+            <main className="min-h-[60vh] pb-24">{children}</main>
+            <Footer />
+            <CompareBar />
+          </IntroGate>
+        </CompareProvider>
       </body>
     </html>
   );

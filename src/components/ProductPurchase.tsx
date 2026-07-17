@@ -3,6 +3,9 @@
 import { useMemo, useState } from "react";
 import type { Product } from "@/lib/types";
 import { formatPrice } from "@/lib/format";
+import { CompareToggle } from "@/components/compare/CompareToggle";
+import { DownloadCatalogue } from "@/components/DownloadCatalogue";
+import { BulbCalculator } from "@/components/BulbCalculator";
 
 export function ProductPurchase({ product }: { product: Product }) {
   const [variantId, setVariantId] = useState(product.variants[0]?.id);
@@ -52,6 +55,13 @@ export function ProductPurchase({ product }: { product: Product }) {
           </div>
         </div>
       ) : null}
+
+      <div className="flex flex-wrap gap-3">
+        <CompareToggle product={product} variant="pdp" />
+        <DownloadCatalogue variant="pdp" />
+      </div>
+
+      <BulbCalculator product={product} variant={variant} />
     </div>
   );
 }

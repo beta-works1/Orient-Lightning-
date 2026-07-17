@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { BrandLogo } from "@/components/BrandLogo";
 import { CategoryGrid } from "@/components/CategoryGrid";
 import { DailyDeal } from "@/components/DailyDeal";
+import { DownloadCatalogue } from "@/components/DownloadCatalogue";
 import { BrandBlurb, CustomerLogos, Testimonials, TrustBadges } from "@/components/HomeSections";
 import { ProductRail } from "@/components/ProductRail";
 import { PromoBanners } from "@/components/PromoBanners";
@@ -16,6 +18,9 @@ export default function HomePage() {
       <section className="relative overflow-hidden bg-gradient-to-br from-brand via-brand to-brand-navy text-white">
         <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-16 sm:py-20 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-xl">
+            <div className="mb-4 inline-flex rounded-md bg-white/95 px-3 py-2">
+              <BrandLogo variant="header" className="brightness-100" />
+            </div>
             <p className="text-sm uppercase tracking-[0.25em] text-white/70">Since 1996</p>
             <h1 className="mt-2 font-display text-4xl font-semibold leading-tight sm:text-5xl">
               {SITE.name}
@@ -36,6 +41,7 @@ export default function HomePage() {
               >
                 Browse Residential
               </Link>
+              <DownloadCatalogue variant="hero" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3 sm:max-w-md">

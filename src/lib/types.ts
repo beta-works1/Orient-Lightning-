@@ -79,6 +79,8 @@ export const SITE = {
   address: "Gate #2, 26km Multan Rd, Maraka Village, Lahore, Punjab 54000",
   darazUrl: "https://www.daraz.pk/shop/orient-lighting/",
   announcement: "Free shipping on orders above Rs. 5,000 · 1-year warranty on LED products",
+  catalogueUrl: "/orient-lighting-catalogue.pdf",
+  catalogueFilename: "Orient-Lighting-Catalogue.pdf",
 };
 
 export const NAV = [

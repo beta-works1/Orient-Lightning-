@@ -26,6 +26,15 @@ body {
   .prose-product ul {
     @apply list-disc pl-5 mb-3 space-y-1;
   }
+  .prose-product table {
+    @apply mb-4 w-full border-collapse text-left text-sm;
+  }
+  .prose-product th {
+    @apply border border-brand-border bg-slate-50 px-3 py-2 font-semibold text-brand-navy;
+  }
+  .prose-product td {
+    @apply border border-brand-border px-3 py-2 text-brand-dark;
+  }
 }
 
 @keyframes marquee {
@@ -39,4 +48,177 @@ body {
 
 .animate-marquee {
   animation: marquee 28s linear infinite;
+}
+
+/* Opening splash — site stays hidden until intro finishes */
+html.intro-pending {
+  background: #162950;
+  overflow: hidden;
+}
+
+html.intro-pending .site-shell,
+.site-shell--hidden {
+  visibility: hidden !important;
+  pointer-events: none !important;
+  max-height: 100vh;
+  overflow: hidden;
+}
+
+.site-shell--visible {
+  visibility: visible;
+  animation: site-reveal 0.55s ease-out both;
+}
+
+@keyframes site-reveal {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.intro-splash {
+  animation: intro-fade-in 0.35s ease-out both;
+}
+
+.intro-splash--exit {
+  animation: intro-fade-out 0.75s ease-in forwards;
+  pointer-events: none;
+}
+
+.intro-splash__glow {
+  position: absolute;
+  inset: 20% 15%;
+  background: radial-gradient(circle, rgba(15, 66, 143, 0.55) 0%, transparent 70%);
+  animation: intro-pulse 2.2s ease-in-out infinite;
+}
+
+.intro-splash__mark {
+  position: relative;
+  z-index: 1;
+  animation: intro-mark-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  filter: drop-shadow(0 0 24px rgba(64, 160, 255, 0.35));
+}
+
+.intro-splash__mark-img {
+  filter: brightness(0) invert(1);
+}
+
+.intro-splash__wordmark {
+  position: relative;
+  z-index: 1;
+  animation: intro-word-in 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.25s both;
+}
+
+.intro-splash__wordmark img {
+  filter: brightness(0) invert(1);
+}
+
+.intro-splash__tag {
+  position: relative;
+  z-index: 1;
+  animation: intro-tag-in 0.7s ease-out 0.55s both;
+}
+
+.intro-splash__beam {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 28%;
+  left: -30%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.08),
+    transparent
+  );
+  transform: skewX(-18deg);
+  animation: intro-beam 1.6s ease-in-out 0.4s both;
+}
+
+@keyframes intro-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes intro-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+@keyframes intro-mark-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6) rotate(-12deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes intro-word-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes intro-tag-in {
+  from {
+    opacity: 0;
+    letter-spacing: 0.55em;
+  }
+  to {
+    opacity: 1;
+    letter-spacing: 0.35em;
+  }
+}
+
+@keyframes intro-beam {
+  from {
+    left: -35%;
+  }
+  to {
+    left: 110%;
+  }
+}
+
+@keyframes intro-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.06);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intro-splash,
+  .intro-splash--exit,
+  .intro-splash__mark,
+  .intro-splash__wordmark,
+  .intro-splash__tag,
+  .intro-splash__beam,
+  .intro-splash__glow,
+  .site-shell--visible {
+    animation: none !important;
+  }
 }

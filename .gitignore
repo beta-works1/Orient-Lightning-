@@ -35,6 +35,16 @@ yarn-error.log*
 
 # local runtime data
 /data/newsletter.json
+/data/catalogue-pages/
+/data/catalogue-extracted.txt
+
+# duplicate source catalogue (served from public/)
+/Catalogue Orient Lighting*.pdf
+
+# temp logo crops
+/public/orient-mark-crop.png
+/public/orient-logo-sm.png
+/public/logo-crop-test.png
 
 # vercel
 .vercel

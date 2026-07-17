@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { BrandLogo } from "@/components/BrandLogo";
+import { CompareHeaderLink } from "@/components/compare/CompareHeaderLink";
 
 function IconSearch() {
   return (
@@ -13,13 +15,8 @@ export function Header() {
   return (
     <header className="sticky top-0 z-40 border-b border-brand-border bg-white/95 backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3">
-        <Link href="/" className="shrink-0">
-          <span className="font-display text-xl sm:text-2xl font-semibold tracking-wide text-brand">
-            ORIENT
-          </span>
-          <span className="ml-1 font-sans text-xs sm:text-sm uppercase tracking-[0.2em] text-brand-navy">
-            Lighting
-          </span>
+        <Link href="/" className="shrink-0" aria-label="Orient Lighting home">
+          <BrandLogo variant="header" priority />
         </Link>
 
         <nav className="hidden lg:flex items-center gap-6">
@@ -85,6 +82,7 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-3 text-brand-navy">
+          <CompareHeaderLink />
           <Link href="/search" aria-label="Search" className="hover:text-brand">
             <IconSearch />
           </Link>
