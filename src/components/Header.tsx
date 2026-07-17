@@ -83,8 +83,7 @@ function NavUnderlineLink({
       </Link>
       <motion.span
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 -bottom-1 h-px bg-brand"
-        style={{ originX: 0 }}
+        className="pointer-events-none absolute inset-x-0 -bottom-1 h-0.5 origin-left bg-brand"
         variants={{
           rest: { scaleX: 0, opacity: 0 },
           hover: { scaleX: 1, opacity: 1 },
@@ -203,11 +202,13 @@ export function Header() {
 
   return (
     <>
-      <motion.header
-        className="sticky top-0 z-40 border-b border-brand-border bg-white/95 backdrop-blur will-change-transform"
-        animate={{ y: hidden ? "-100%" : "0%" }}
-        transition={headerTransition}
-      >
+      <header className="sticky top-0 z-40">
+        <motion.div
+          className="border-b border-brand-border bg-white/95 backdrop-blur will-change-transform"
+          initial={false}
+          animate={{ y: hidden ? "-100%" : "0%" }}
+          transition={headerTransition}
+        >
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3">
           <motion.div
             className="shrink-0"
@@ -275,7 +276,8 @@ export function Header() {
             Smart
           </Link>
         </div>
-      </motion.header>
+        </motion.div>
+      </header>
 
       <AnimatePresence>
         {drawerOpen ? (

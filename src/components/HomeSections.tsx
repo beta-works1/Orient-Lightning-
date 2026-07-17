@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { CUSTOMER_LOGOS, TESTIMONIALS, TRUST_BADGES } from "@/lib/types";
 
@@ -28,12 +29,18 @@ export function CustomerLogos() {
         <h2 className="text-center font-display text-2xl text-brand-navy">Our Proud Customers</h2>
         <div className="mt-6 overflow-hidden">
           <div className="animate-marquee flex w-max gap-4">
-            {row.map((label, i) => (
+            {row.map((logo, i) => (
               <div
-                key={`${label}-${i}`}
-                className="flex h-16 w-36 items-center justify-center rounded-md border border-brand-border bg-slate-50 text-xs font-semibold uppercase tracking-wide text-brand-muted"
+                key={`${logo.name}-${i}`}
+                className="flex h-16 w-36 items-center justify-center rounded-md border border-brand-border bg-slate-50 px-3"
               >
-                {label}
+                <Image
+                  src={logo.src}
+                  alt={logo.name}
+                  width={104}
+                  height={52}
+                  className="h-10 w-auto object-contain"
+                />
               </div>
             ))}
           </div>

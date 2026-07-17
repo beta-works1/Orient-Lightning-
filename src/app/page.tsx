@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { BrandLogo } from "@/components/BrandLogo";
 import { CategoryGrid } from "@/components/CategoryGrid";
@@ -8,6 +9,25 @@ import { ProductRail } from "@/components/ProductRail";
 import { PromoBanners } from "@/components/PromoBanners";
 import { getDailyDealProducts, getFeaturedProducts } from "@/lib/catalog";
 import { SITE } from "@/lib/types";
+
+const HERO_TILES = [
+  { label: "Bulbs", image: "/images/categories/bulbs-icon.png", href: "/collections/bulbs" },
+  {
+    label: "Panels",
+    image: "/images/categories/panels-icon.png",
+    href: "/collections/led-recessed-surface-panels",
+  },
+  {
+    label: "Flood",
+    image: "/images/categories/flood-lights-icon.png",
+    href: "/collections/flood-lights",
+  },
+  {
+    label: "Highbay",
+    image: "/images/categories/highbay-lights-icon.png",
+    href: "/collections/highbay-lights",
+  },
+] as const;
 
 export default function HomePage() {
   const featured = getFeaturedProducts(8);
@@ -45,13 +65,21 @@ export default function HomePage() {
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3 sm:max-w-md">
-            {["Bulbs", "Panels", "Flood", "Highbay"].map((label) => (
-              <div
-                key={label}
-                className="flex aspect-[4/3] items-end rounded-lg bg-white/10 p-4 ring-1 ring-white/20"
+            {HERO_TILES.map((tile) => (
+              <Link
+                key={tile.label}
+                href={tile.href}
+                className="relative flex aspect-[4/3] items-end overflow-hidden rounded-lg bg-white/10 p-4 ring-1 ring-white/20"
               >
-                <span className="font-display text-lg">{label}</span>
-              </div>
+                <Image
+                  src={tile.image}
+                  alt=""
+                  width={96}
+                  height={96}
+                  className="pointer-events-none absolute right-2 top-2 h-14 w-14 object-contain opacity-90 sm:h-16 sm:w-16"
+                />
+                <span className="relative font-display text-lg">{tile.label}</span>
+              </Link>
             ))}
           </div>
         </div>

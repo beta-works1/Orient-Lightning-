@@ -110,16 +110,66 @@ export const NAV = [
 ] as const;
 
 export const CATEGORY_TILES = [
-  { label: "Bulbs", href: "/collections/bulbs", icon: "bulb" },
-  { label: "Downlights", href: "/collections/downlights", icon: "down" },
-  { label: "Panels", href: "/collections/led-recessed-surface-panels", icon: "panel" },
-  { label: "Track Lights", href: "/collections/track-light", icon: "track" },
-  { label: "Flood Lights", href: "/collections/flood-lights", icon: "flood" },
-  { label: "Spot Lights", href: "/collections/spot-light", icon: "spot" },
-  { label: "Street Lights", href: "/collections/street-light", icon: "street" },
-  { label: "Battens", href: "/collections/battens-tube-lights", icon: "batten" },
-  { label: "Highbay Lights", href: "/collections/highbay-lights", icon: "highbay" },
-  { label: "Smart Lights", href: "/collections/smart-lights", icon: "smart" },
+  {
+    label: "Bulbs",
+    href: "/collections/bulbs",
+    image: "/images/categories/bulbs-icon.png",
+  },
+  {
+    label: "Downlights",
+    href: "/collections/downlights",
+    image: "/images/categories/downlights-icon.png",
+  },
+  {
+    label: "Panels",
+    href: "/collections/led-recessed-surface-panels",
+    image: "/images/categories/panels-icon.png",
+  },
+  {
+    label: "Track Lights",
+    href: "/collections/track-light",
+    image: "/images/categories/track-lights-icon.png",
+  },
+  {
+    label: "Flood Lights",
+    href: "/collections/flood-lights",
+    image: "/images/categories/flood-lights-icon.png",
+  },
+  {
+    label: "Spot Lights",
+    href: "/collections/spot-light",
+    image: "/images/categories/spot-lights-icon.png",
+  },
+  {
+    label: "Street Lights",
+    href: "/collections/street-light",
+    image: "/images/categories/street-lights-icon.png",
+  },
+  {
+    label: "Lamps",
+    href: "/collections/led-bulbs",
+    image: "/images/categories/lamps-icon.png",
+  },
+  {
+    label: "Battens",
+    href: "/collections/battens-tube-lights",
+    image: "/images/categories/battens-icon.png",
+  },
+  {
+    label: "Highbay Lights",
+    href: "/collections/highbay-lights",
+    image: "/images/categories/highbay-lights-icon.png",
+  },
+  {
+    label: "Fixtures",
+    href: "/collections/residential-lighting",
+    image: "/images/categories/fixtures-icon.png",
+  },
+  {
+    label: "Wall Lights",
+    href: "/collections/spot-light",
+    image: "/images/categories/wall-lights-icon.png",
+  },
 ] as const;
 
 export const FOOTER_LINKS = [
@@ -156,12 +206,29 @@ export const TESTIMONIALS = [
 ] as const;
 
 export const CUSTOMER_LOGOS = [
-  "Banks",
-  "Universities",
-  "Hospitals",
-  "Telecom",
-  "Government",
-  "Hotels",
-  "Malls",
-  "Factories",
+  { name: "Bahria Town", src: "/images/clients/client-bahria-town.png" },
+  { name: "City Government Lahore", src: "/images/clients/client-city-govt-lahore.png" },
+  { name: "Coca-Cola", src: "/images/clients/client-cocacola.png" },
+  { name: "DHA Lahore", src: "/images/clients/client-dha-lhr.png" },
+  { name: "HBL", src: "/images/clients/client-hbl.png" },
+  { name: "Hyperstar", src: "/images/clients/client-hyperstar.png" },
+  { name: "Jinnah Hospital", src: "/images/clients/client-jinnah-hospital.png" },
+  { name: "Kashf", src: "/images/clients/client-kashf.png" },
+  { name: "KNN", src: "/images/clients/client-knn.png" },
+  { name: "LDA", src: "/images/clients/client-lda.png" },
+  { name: "Leads University", src: "/images/clients/client-leads-uni.png" },
+  { name: "Lahore Gymkhana", src: "/images/clients/client-lhr-gymkhana.png" },
+  { name: "Metro", src: "/images/clients/client-metro.png" },
+  { name: "Mobilink", src: "/images/clients/client-mobilink.png" },
+  { name: "Pakistan Army", src: "/images/clients/client-pak-army.png" },
+  { name: "Pearl Continental", src: "/images/clients/client-pc.png" },
+  { name: "Punjab College", src: "/images/clients/client-punjab-college.png" },
+  { name: "SA Gardens", src: "/images/clients/client-sa-gardens.png" },
+  { name: "Saif Care", src: "/images/clients/client-saif-care.png" },
+  { name: "Serena", src: "/images/clients/client-serena.png" },
+  { name: "Sialkot International Airport", src: "/images/clients/client-sialkot-int-airport.png" },
+  { name: "UCP", src: "/images/clients/client-ucp.png" },
+  { name: "UMT", src: "/images/clients/client-umt.png" },
+  { name: "Warid", src: "/images/clients/client-warid.png" },
+  { name: "Wateen", src: "/images/clients/client-wateen.png" },
 ] as const;

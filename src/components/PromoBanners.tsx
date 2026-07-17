@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 const promos = [
@@ -6,18 +7,36 @@ const promos = [
     blurb: "Energy-efficient bulbs, downlights, battens and panels for every room.",
     href: "/collections/residential-lighting",
     tone: "from-brand to-brand-navy",
+    images: [
+      "/images/promo/residential-1.jpg",
+      "/images/promo/residential-2.jpg",
+      "/images/promo/residential-1.jpg",
+      "/images/promo/residential-2.jpg",
+    ],
   },
   {
     title: "Commercial Lighting",
     blurb: "Flood lights, highbays and street lights built for demanding spaces.",
     href: "/collections/commercial-lighting",
     tone: "from-brand-navy to-slate-800",
+    images: [
+      "/images/promo/commercial-1.jpg",
+      "/images/promo/commercial-2.jpg",
+      "/images/promo/commercial-1.jpg",
+      "/images/promo/commercial-2.jpg",
+    ],
   },
   {
     title: "Industrial Solutions",
     blurb: "High-output LED systems trusted by factories, warehouses and campuses.",
     href: "/collections/highbay-lights",
     tone: "from-slate-800 to-brand",
+    images: [
+      "/images/promo/industrial-1.jpg",
+      "/images/promo/industrial-2.jpg",
+      "/images/promo/industrial-1.jpg",
+      "/images/promo/industrial-2.jpg",
+    ],
   },
 ];
 
@@ -39,8 +58,19 @@ export function PromoBanners() {
               Discover Now
             </Link>
             <div className="mt-6 grid grid-cols-2 gap-2">
-              {[0, 1, 2, 3].map((i) => (
-                <div key={i} className="aspect-square rounded-md bg-white/10 ring-1 ring-white/20" />
+              {promo.images.map((src, i) => (
+                <div
+                  key={`${src}-${i}`}
+                  className="relative aspect-square overflow-hidden rounded-md ring-1 ring-white/20"
+                >
+                  <Image
+                    src={src}
+                    alt=""
+                    fill
+                    sizes="(max-width:1024px) 40vw, 15vw"
+                    className="object-cover"
+                  />
+                </div>
               ))}
             </div>
           </div>
