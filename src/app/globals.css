@@ -14,6 +14,13 @@ body {
   background: var(--background);
 }
 
+@layer base {
+  *:focus-visible {
+    outline: 2px solid #0f428f;
+    outline-offset: 3px;
+  }
+}
+
 @layer utilities {
   .prose-product h1,
   .prose-product h2,
@@ -33,7 +40,11 @@ body {
     @apply border border-brand-border bg-slate-50 px-3 py-2 font-semibold text-brand-navy;
   }
   .prose-product td {
-    @apply border border-brand-border px-3 py-2 text-brand-dark;
+    @apply border border-brand-border px-3 py-2 font-mono text-xs text-brand-dark;
+  }
+
+  .spec-mono {
+    @apply font-mono text-xs tracking-tight tabular-nums;
   }
 }
 
@@ -47,26 +58,21 @@ body {
 }
 
 .animate-marquee {
-  animation: marquee 28s linear infinite;
+  animation: marquee 70s linear infinite;
 }
 
-/* Opening splash — site stays hidden until intro finishes */
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
 html.intro-pending {
   background: #162950;
   overflow: hidden;
 }
 
-html.intro-pending .site-shell,
-.site-shell--hidden {
-  visibility: hidden !important;
-  pointer-events: none !important;
-  max-height: 100vh;
-  overflow: hidden;
-}
-
+/* Splash overlays the site — never permanently hide the storefront. */
 .site-shell--visible {
   visibility: visible;
-  animation: site-reveal 0.55s ease-out both;
 }
 
 @keyframes site-reveal {
@@ -125,15 +131,13 @@ html.intro-pending .site-shell,
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 28%;
-  left: -30%;
+  width: 18%;
   background: linear-gradient(
     90deg,
     transparent,
     rgba(255, 255, 255, 0.08),
     transparent
   );
-  transform: skewX(-18deg);
   animation: intro-beam 1.6s ease-in-out 0.4s both;
 }
 
@@ -152,7 +156,6 @@ html.intro-pending .site-shell,
   }
   to {
     opacity: 0;
-    visibility: hidden;
   }
 }
 
@@ -163,7 +166,7 @@ html.intro-pending .site-shell,
   }
   to {
     opacity: 1;
-    transform: scale(1) rotate(0deg);
+    transform: scale(1) rotate(0);
   }
 }
 
@@ -202,15 +205,16 @@ html.intro-pending .site-shell,
   0%,
   100% {
     opacity: 0.55;
-    transform: scale(1);
   }
   50% {
     opacity: 0.9;
-    transform: scale(1.06);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .animate-marquee {
+    animation: none !important;
+  }
   .intro-splash,
   .intro-splash--exit,
   .intro-splash__mark,
@@ -220,5 +224,34 @@ html.intro-pending .site-shell,
   .intro-splash__glow,
   .site-shell--visible {
     animation: none !important;
+  }
+}
+
+.product-card-bloom {
+  position: relative;
+}
+
+.product-card-bloom::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: -8%;
+  border-radius: 24px;
+  background: radial-gradient(circle at 50% 40%, rgba(15, 66, 143, 0.22), transparent 62%);
+  opacity: 0;
+  transform: scale(0.92);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+  z-index: 0;
+}
+
+.product-card-bloom:hover::before,
+.product-card-bloom:focus-within::before {
+  opacity: 1;
+  transform: scale(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .product-card-bloom::before {
+    transition: none;
   }
 }

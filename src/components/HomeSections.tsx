@@ -24,24 +24,22 @@ export function BrandBlurb() {
 export function CustomerLogos() {
   const row = [...CUSTOMER_LOGOS, ...CUSTOMER_LOGOS];
   return (
-    <section className="border-y border-brand-border bg-white py-10">
+    <section className="bg-white py-12 sm:py-14">
       <div className="mx-auto max-w-7xl px-4">
-        <h2 className="text-center font-display text-2xl text-brand-navy">Our Proud Customers</h2>
-        <div className="mt-6 overflow-hidden">
-          <div className="animate-marquee flex w-max gap-4">
+        <h2 className="text-center font-display text-2xl text-brand-navy sm:text-3xl">
+          Our Proud Customers
+        </h2>
+        <div className="mt-8 overflow-hidden">
+          <div className="animate-marquee flex w-max items-center gap-10 sm:gap-14">
             {row.map((logo, i) => (
-              <div
+              <Image
                 key={`${logo.name}-${i}`}
-                className="flex h-16 w-36 items-center justify-center rounded-md border border-brand-border bg-slate-50 px-3"
-              >
-                <Image
-                  src={logo.src}
-                  alt={logo.name}
-                  width={104}
-                  height={52}
-                  className="h-10 w-auto object-contain"
-                />
-              </div>
+                src={logo.src}
+                alt={logo.name}
+                width={160}
+                height={80}
+                className="h-12 w-auto max-w-[9rem] shrink-0 object-contain sm:h-14 sm:max-w-[10.5rem]"
+              />
             ))}
           </div>
         </div>
@@ -52,15 +50,25 @@ export function CustomerLogos() {
 
 export function Testimonials() {
   return (
-    <section className="mx-auto max-w-7xl px-4 py-12">
-      <h2 className="text-center font-display text-2xl text-brand-navy sm:text-3xl">What Customers Say</h2>
-      <div className="mt-8 grid gap-4 md:grid-cols-3">
-        {TESTIMONIALS.map((t) => (
-          <blockquote key={t.name} className="rounded-lg border border-brand-border bg-white p-5">
-            <p className="text-sm leading-relaxed text-brand-dark">&ldquo;{t.quote}&rdquo;</p>
-            <footer className="mt-4 text-sm font-semibold text-brand">{t.name}</footer>
-          </blockquote>
-        ))}
+    <section className="bg-white py-16 sm:py-20">
+      <div className="mx-auto max-w-7xl px-4">
+        <div className="text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-brand">What People Say</p>
+          <h2 className="mt-3 font-sans text-3xl font-extrabold tracking-tight text-brand-navy sm:text-4xl">
+            Trusted Across Pakistan
+          </h2>
+        </div>
+        <div className="mt-10 grid gap-4 md:grid-cols-3">
+          {TESTIMONIALS.map((t) => (
+            <blockquote
+              key={t.name}
+              className="rounded-2xl border border-brand-border bg-brand-off p-6"
+            >
+              <p className="text-sm leading-relaxed text-brand-dark">&ldquo;{t.quote}&rdquo;</p>
+              <footer className="mt-4 text-sm font-semibold text-brand">{t.name}</footer>
+            </blockquote>
+          ))}
+        </div>
       </div>
     </section>
   );

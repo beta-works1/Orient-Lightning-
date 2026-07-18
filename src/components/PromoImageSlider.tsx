@@ -34,24 +34,24 @@ export function PromoImageSlider({ images, alt = "", intervalMs = 3800 }: Props)
 
   return (
     <div className="mt-5">
-      <div className="relative mx-auto h-[140px] w-full max-w-[220px] overflow-hidden rounded-md bg-black/20 ring-1 ring-white/20 sm:h-[160px] sm:max-w-[240px]">
+      <div className="relative aspect-[16/10] w-full overflow-hidden rounded-xl bg-black/20 ring-1 ring-white/20">
         <AnimatePresence initial={false} custom={direction} mode="popLayout">
           <motion.div
             key={unique[index]}
             custom={direction}
-            className="absolute inset-0 flex items-center justify-center p-2"
-            initial={reduce ? { opacity: 0 } : { opacity: 0, x: direction > 0 ? 36 : -36 }}
+            className="absolute inset-0"
+            initial={reduce ? { opacity: 0 } : { opacity: 0, x: direction > 0 ? 40 : -40 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={reduce ? { opacity: 0 } : { opacity: 0, x: direction > 0 ? -28 : 28 }}
+            exit={reduce ? { opacity: 0 } : { opacity: 0, x: direction > 0 ? -32 : 32 }}
             transition={{ duration: reduce ? 0.2 : 0.45, ease: [0.22, 1, 0.36, 1] }}
           >
             <Image
               src={unique[index]}
               alt={alt}
-              width={270}
-              height={270}
-              sizes="240px"
-              className="h-full w-full object-contain"
+              fill
+              sizes="(max-width:1024px) 90vw, 30vw"
+              quality={90}
+              className="object-cover"
               priority={index === 0}
             />
           </motion.div>

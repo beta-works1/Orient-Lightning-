@@ -46,6 +46,11 @@ yarn-error.log*
 /public/orient-logo-sm.png
 /public/logo-crop-test.png
 
+# catalogue page renders + superseded tiny Shopify promo crops
+/public/images/catalogue-refs/
+/public/images/promo/legacy-270/
+/public/images/promo/*.png
+
 # vercel
 .vercel
 

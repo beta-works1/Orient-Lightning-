@@ -1,31 +1,31 @@
 import type { Metadata } from "next";
 import Script from "next/script";
-import { Montserrat, Oswald, Roboto } from "next/font/google";
+import { DM_Sans, JetBrains_Mono, Syne } from "next/font/google";
 import { AnnouncementBar } from "@/components/AnnouncementBar";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { CompareProvider } from "@/components/compare/CompareProvider";
 import { CompareBar } from "@/components/compare/CompareBar";
 import { IntroGate } from "@/components/IntroGate";
+import { MotionRoot } from "@/components/motion/MotionRoot";
 import { SITE, SITE_URL } from "@/lib/types";
 import "./globals.css";
 
-const montserrat = Montserrat({
+const syne = Syne({
   subsets: ["latin"],
-  variable: "--font-montserrat",
+  variable: "--font-syne",
   display: "swap",
 });
 
-const oswald = Oswald({
+const dmSans = DM_Sans({
   subsets: ["latin"],
-  variable: "--font-oswald",
+  variable: "--font-dm-sans",
   display: "swap",
 });
 
-const roboto = Roboto({
-  weight: ["400", "500", "700"],
+const jetbrains = JetBrains_Mono({
   subsets: ["latin"],
-  variable: "--font-roboto",
+  variable: "--font-mono",
   display: "swap",
 });
 
@@ -49,23 +49,27 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${montserrat.variable} ${oswald.variable} ${roboto.variable} font-sans antialiased`}>
+      <body
+        className={`${syne.variable} ${dmSans.variable} ${jetbrains.variable} font-sans antialiased`}
+      >
         <Script
           id="orient-intro-gate"
           strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{if(sessionStorage.getItem("orient-intro-seen")!=="1"){document.documentElement.classList.add("intro-pending");}}catch(e){document.documentElement.classList.add("intro-pending");}})();`,
+            __html: `(function(){try{var q=new URLSearchParams(location.search);if(q.get("skipIntro")==="1"){sessionStorage.setItem("orient-intro-seen","1");return;}if(sessionStorage.getItem("orient-intro-seen")!=="1"){document.documentElement.classList.add("intro-pending");}}catch(e){}})();`,
           }}
         />
-        <CompareProvider>
-          <IntroGate>
-            <AnnouncementBar />
-            <Header />
-            <main className="min-h-[60vh] pb-24">{children}</main>
-            <Footer />
-            <CompareBar />
-          </IntroGate>
-        </CompareProvider>
+        <MotionRoot>
+          <CompareProvider>
+            <IntroGate>
+              <AnnouncementBar />
+              <Header />
+              <main className="min-h-[60vh] pb-24">{children}</main>
+              <Footer />
+              <CompareBar />
+            </IntroGate>
+          </CompareProvider>
+        </MotionRoot>
       </body>
     </html>
   );

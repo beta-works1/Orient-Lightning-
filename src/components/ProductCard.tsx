@@ -7,18 +7,20 @@ import { CompareToggle } from "@/components/compare/CompareToggle";
 export function ProductCard({ product }: { product: Product }) {
   const image = product.images[0];
   const onSale = product.compareAtPrice != null && product.compareAtPrice > product.price;
+  const watt = product.facets?.wattage?.[0];
+  const cct = product.facets?.colorTemp?.[0];
 
   return (
-    <article className="group relative flex h-full flex-col overflow-hidden rounded-lg border border-brand-border bg-white transition hover:shadow-md">
-      <div className="relative">
-        <Link href={`/products/${product.handle}`} className="relative block aspect-square bg-slate-50">
+    <article className="product-card-bloom group relative flex h-full flex-col overflow-visible rounded-2xl border border-brand-border bg-white transition hover:shadow-bloom">
+      <div className="relative z-[1] overflow-hidden rounded-t-2xl">
+        <Link href={`/products/${product.handle}`} className="relative block aspect-square bg-brand-ice/40">
           {image ? (
             <Image
               src={image}
               alt={product.title}
               fill
               sizes="(max-width:768px) 50vw, 25vw"
-              className="object-contain p-3 transition group-hover:scale-[1.02]"
+              className="object-contain p-3 transition duration-300 group-hover:scale-[1.03]"
             />
           ) : (
             <div className="flex h-full items-center justify-center text-sm text-brand-muted">No image</div>
@@ -31,10 +33,20 @@ export function ProductCard({ product }: { product: Product }) {
         </Link>
         <CompareToggle product={product} />
       </div>
-      <div className="flex flex-1 flex-col gap-2 p-3">
-        <Link href={`/products/${product.handle}`} className="line-clamp-2 text-sm font-medium text-brand-dark hover:text-brand">
+      <div className="relative z-[1] flex flex-1 flex-col gap-2 p-4">
+        <Link
+          href={`/products/${product.handle}`}
+          className="line-clamp-2 text-sm font-medium text-brand-charcoal hover:text-brand"
+        >
           {product.title}
         </Link>
+        {(watt || cct) && (
+          <p className="spec-mono text-brand-muted">
+            {watt ? `${watt}W` : null}
+            {watt && cct ? " · " : null}
+            {cct ? `${cct}K` : null}
+          </p>
+        )}
         <div className="mt-auto flex items-baseline gap-2">
           <span className="font-semibold text-brand">{formatPrice(product.price)}</span>
           {onSale ? (
