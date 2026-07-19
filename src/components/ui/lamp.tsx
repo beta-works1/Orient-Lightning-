@@ -28,11 +28,11 @@ export function LampContainer({
       <div className="relative isolate z-0 flex w-full flex-1 scale-y-125 items-center justify-center">
         {/* Warm cone — amber, 2700K */}
         <motion.div
-          initial={reduce ? false : { opacity: 0.5, width: "15rem" }}
+          initial={reduce ? false : { opacity: 0.45, width: "12rem" }}
           whileInView={{ opacity: 1, width: "30rem" }}
-          viewport={{ once: true, amount: 0.4 }}
+          viewport={{ once: true, amount: 0.25 }}
           transition={
-            reduce ? { duration: 0 } : { delay: 0.3, duration: 0.8, ease: "easeInOut" }
+            reduce ? { duration: 0 } : { delay: 0.4, duration: 2.0, ease: "easeInOut" }
           }
           style={{
             backgroundImage: `conic-gradient(var(--conic-position), var(--tw-gradient-stops))`,
@@ -45,11 +45,11 @@ export function LampContainer({
 
         {/* Cool cone — blue, 6500K */}
         <motion.div
-          initial={reduce ? false : { opacity: 0.5, width: "15rem" }}
+          initial={reduce ? false : { opacity: 0.45, width: "12rem" }}
           whileInView={{ opacity: 1, width: "30rem" }}
-          viewport={{ once: true, amount: 0.4 }}
+          viewport={{ once: true, amount: 0.25 }}
           transition={
-            reduce ? { duration: 0 } : { delay: 0.3, duration: 0.8, ease: "easeInOut" }
+            reduce ? { duration: 0 } : { delay: 0.4, duration: 2.0, ease: "easeInOut" }
           }
           style={{
             backgroundImage: `conic-gradient(var(--conic-position), var(--tw-gradient-stops))`,
@@ -66,21 +66,21 @@ export function LampContainer({
         <div className="absolute inset-auto z-50 h-36 w-[28rem] -translate-y-1/2 rounded-full bg-gradient-to-r from-[#FFB84D] to-[#2F6FE0] opacity-40 blur-3xl" />
 
         <motion.div
-          initial={reduce ? false : { width: "8rem" }}
+          initial={reduce ? false : { width: "6rem" }}
           whileInView={{ width: "16rem" }}
-          viewport={{ once: true, amount: 0.4 }}
+          viewport={{ once: true, amount: 0.25 }}
           transition={
-            reduce ? { duration: 0 } : { delay: 0.3, duration: 0.8, ease: "easeInOut" }
+            reduce ? { duration: 0 } : { delay: 0.55, duration: 2.0, ease: "easeInOut" }
           }
           className="absolute inset-auto z-30 h-36 w-64 -translate-y-[6rem] rounded-full bg-gradient-to-r from-[#FFB84D] to-[#2F6FE0] blur-2xl"
         />
 
         <motion.div
-          initial={reduce ? false : { width: "15rem" }}
+          initial={reduce ? false : { width: "12rem" }}
           whileInView={{ width: "30rem" }}
-          viewport={{ once: true, amount: 0.4 }}
+          viewport={{ once: true, amount: 0.25 }}
           transition={
-            reduce ? { duration: 0 } : { delay: 0.3, duration: 0.8, ease: "easeInOut" }
+            reduce ? { duration: 0 } : { delay: 0.55, duration: 2.0, ease: "easeInOut" }
           }
           className="absolute inset-auto z-50 h-0.5 w-[30rem] -translate-y-[7rem] bg-gradient-to-r from-[#FFB84D] via-white to-[#2F6FE0]"
         />
