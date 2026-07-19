@@ -17,7 +17,7 @@ export function OrientLampSection() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.4 }}
         transition={
-          reduce ? { duration: 0 } : { delay: 0.9, duration: 1.6, ease: "easeInOut" }
+          reduce ? { duration: 0 } : { delay: 1.4, duration: 2.2, ease: "easeInOut" }
         }
         className="mt-8 bg-gradient-to-br from-white to-blue-100 bg-clip-text py-4 text-center font-display text-4xl font-extrabold tracking-tight text-transparent md:text-6xl lg:text-7xl"
       >
@@ -28,7 +28,7 @@ export function OrientLampSection() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.4 }}
         transition={
-          reduce ? { duration: 0 } : { delay: 1.5, duration: 1.5, ease: "easeInOut" }
+          reduce ? { duration: 0 } : { delay: 2.4, duration: 2.0, ease: "easeInOut" }
         }
         className="mt-4 max-w-lg text-center text-sm text-slate-300 md:text-base"
       >
