@@ -47,7 +47,7 @@ export function CompareToggle({
         e.stopPropagation();
         toggle(toItem(product));
       }}
-      className={`absolute right-2 top-2 z-10 rounded-md border bg-white/95 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide shadow-sm transition ${
+      className={`absolute right-2 top-2 z-10 inline-flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center rounded-md border bg-white/95 px-2 text-[10px] font-semibold uppercase tracking-wide shadow-sm transition ${
         selected
           ? "border-brand text-brand"
           : "border-brand-border text-brand-navy hover:border-brand hover:text-brand"

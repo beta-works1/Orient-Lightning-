@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { DownloadCatalogue } from "@/components/DownloadCatalogue";
+import { MotionLink } from "@/components/motion/Reveal";
 
 export function LandingCompareCta() {
   return (
@@ -22,12 +22,12 @@ export function LandingCompareCta() {
             <li>• Application fit</li>
             <li>• Price & value</li>
           </ul>
-          <Link
+          <MotionLink
             href="/compare"
             className="mt-8 inline-flex rounded-full bg-white px-6 py-3 text-sm font-semibold text-brand hover:bg-slate-100"
           >
             Start Comparing
-          </Link>
+          </MotionLink>
         </div>
 
         <div className="rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur">
@@ -51,12 +51,12 @@ export function LandingCompareCta() {
             ))}
           </div>
           <div className="mt-6 flex flex-wrap gap-3">
-            <Link
+            <MotionLink
               href="/collections/best-sellers"
               className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-brand hover:bg-slate-100"
             >
               Find My Match
-            </Link>
+            </MotionLink>
             <DownloadCatalogue variant="hero" />
           </div>
         </div>
@@ -77,18 +77,18 @@ export function LandingConfidence() {
           </p>
         </div>
         <div className="flex flex-wrap gap-3 md:justify-end">
-          <Link
+          <MotionLink
             href="/pages/warranty-claim"
             className="rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-navy"
           >
             Warranty & Claim
-          </Link>
-          <Link
+          </MotionLink>
+          <MotionLink
             href="/pages/become-our-partner"
             className="rounded-full border border-brand px-5 py-2.5 text-sm font-semibold text-brand hover:bg-brand-off"
           >
             Become a Partner
-          </Link>
+          </MotionLink>
         </div>
       </div>
     </section>

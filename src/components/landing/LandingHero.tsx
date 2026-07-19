@@ -1,9 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { MotionLink } from "@/components/motion/Reveal";
 
 const SLIDES = [
   {
@@ -50,6 +50,24 @@ const SLIDES = [
   },
 ] as const;
 
+const EASE = [0.22, 1, 0.36, 1] as const;
+
+const copyParent = {
+  hidden: {},
+  show: {
+    transition: { staggerChildren: 0.08 },
+  },
+};
+
+const copyChild = {
+  hidden: { opacity: 0, y: 12 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.28, ease: EASE },
+  },
+};
+
 function ArrowIcon({ dir }: { dir: "left" | "right" }) {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
@@ -62,12 +80,9 @@ export function LandingHero() {
   const reduce = useReducedMotion();
   const [index, setIndex] = useState(0);
 
-  const go = useCallback(
-    (dir: -1 | 1) => {
-      setIndex((i) => (i + dir + SLIDES.length) % SLIDES.length);
-    },
-    [],
-  );
+  const go = useCallback((dir: -1 | 1) => {
+    setIndex((i) => (i + dir + SLIDES.length) % SLIDES.length);
+  }, []);
 
   useEffect(() => {
     if (reduce) return;
@@ -83,10 +98,10 @@ export function LandingHero() {
         <motion.div
           key={slide.image}
           className="absolute inset-0"
-          initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 1.03 }}
-          animate={{ opacity: 1, scale: 1 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: reduce ? 0.2 : 0.45, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: reduce ? 0 : 0.28, ease: EASE }}
         >
           <Image
             src={slide.image}
@@ -97,7 +112,6 @@ export function LandingHero() {
             quality={90}
             className="object-cover object-center"
           />
-          {/* Soft vignette — keeps the photo readable without drowning it */}
           <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/25 to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/25" />
         </motion.div>
@@ -108,28 +122,34 @@ export function LandingHero() {
           <motion.div
             key={slide.title}
             className="max-w-2xl"
-            initial={reduce ? false : { opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={reduce ? undefined : { opacity: 0, y: -12 }}
-            transition={{ duration: reduce ? 0.15 : 0.4, ease: [0.22, 1, 0.36, 1] }}
+            variants={reduce ? undefined : copyParent}
+            initial={reduce ? false : "hidden"}
+            animate={reduce ? undefined : "show"}
           >
-            <h1 className="font-display text-[2.35rem] font-extrabold uppercase leading-[1.02] tracking-tight text-white sm:text-5xl lg:text-6xl xl:text-[4.25rem]">
+            <motion.h1
+              variants={reduce ? undefined : copyChild}
+              className="font-display text-[2.35rem] font-extrabold uppercase leading-[1.02] tracking-tight text-white sm:text-5xl lg:text-6xl xl:text-[4.25rem]"
+            >
               {slide.title}
-            </h1>
-            <p className="mt-5 max-w-md text-base text-white/90 sm:text-lg">{slide.description}</p>
-            <div className="mt-8">
-              <Link
+            </motion.h1>
+            <motion.p
+              variants={reduce ? undefined : copyChild}
+              className="mt-5 max-w-md text-base text-white/90 sm:text-lg"
+            >
+              {slide.description}
+            </motion.p>
+            <motion.div variants={reduce ? undefined : copyChild} className="mt-8">
+              <MotionLink
                 href={slide.href}
-                className="inline-flex rounded-full bg-brand px-7 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-white transition hover:bg-white hover:text-brand"
+                className="inline-flex rounded-full bg-brand px-7 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-white shadow-sm transition-shadow duration-150 hover:bg-white hover:text-brand hover:shadow-md"
               >
                 {slide.cta}
-              </Link>
-            </div>
+              </MotionLink>
+            </motion.div>
           </motion.div>
         </AnimatePresence>
       </div>
 
-      {/* Fixed to hero frame — does not move when slide copy height changes */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20">
         <div className="pointer-events-auto mx-auto flex max-w-7xl items-center justify-between gap-6 px-4 pb-8 sm:pb-10">
           <div className="flex items-center gap-2" aria-label="Carousel slides">
@@ -140,7 +160,7 @@ export function LandingHero() {
                 aria-label={`Go to slide ${i + 1}`}
                 aria-current={i === index ? "true" : undefined}
                 onClick={() => setIndex(i)}
-                className={`h-0.5 rounded-full transition-all ${
+                className={`h-0.5 rounded-full transition-all duration-150 ${
                   i === index ? "w-10 bg-white" : "w-6 bg-white/35 hover:bg-white/60"
                 }`}
               />
@@ -152,7 +172,7 @@ export function LandingHero() {
               type="button"
               aria-label="Previous slide"
               onClick={() => go(-1)}
-              className="flex h-11 w-11 items-center justify-center rounded-full border border-white/50 text-white transition hover:border-white hover:bg-white/10"
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-white/50 text-white transition duration-150 hover:border-white hover:bg-white/10"
             >
               <ArrowIcon dir="left" />
             </button>
@@ -160,7 +180,7 @@ export function LandingHero() {
               type="button"
               aria-label="Next slide"
               onClick={() => go(1)}
-              className="flex h-11 w-11 items-center justify-center rounded-full border border-white/50 text-white transition hover:border-white hover:bg-white/10"
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-white/50 text-white transition duration-150 hover:border-white hover:bg-white/10"
             >
               <ArrowIcon dir="right" />
             </button>

@@ -11,6 +11,7 @@ import {
 } from "framer-motion";
 import { BrandLogo } from "@/components/BrandLogo";
 import { CompareHeaderLink } from "@/components/compare/CompareHeaderLink";
+import { MotionLink } from "@/components/motion/Reveal";
 
 const easeOut = "easeOut" as const;
 
@@ -269,6 +270,9 @@ export function Header() {
               <NavUnderlineLink href="/collections/smart-lights" reduce={reduce} overlay={overlay}>
                 Smart Lights
               </NavUnderlineLink>
+              <NavUnderlineLink href="/stores" reduce={reduce} overlay={overlay}>
+                Stores
+              </NavUnderlineLink>
             </nav>
 
             <div
@@ -279,12 +283,12 @@ export function Header() {
                   <CompareHeaderLink />
                 </IconMotion>
               ) : (
-                <Link
+                <MotionLink
                   href="/collections/best-sellers"
                   className="hidden rounded-full bg-brand px-5 py-2 text-xs font-semibold uppercase tracking-wide text-white hover:bg-white hover:text-brand sm:inline-flex"
                 >
                   Shop Now
-                </Link>
+                </MotionLink>
               )}
               <IconMotion reduce={reduce}>
                 <Link
@@ -325,6 +329,9 @@ export function Header() {
               </Link>
               <Link href="/collections/smart-lights" className="whitespace-nowrap text-brand-dark">
                 Smart
+              </Link>
+              <Link href="/stores" className="whitespace-nowrap text-brand-dark">
+                Stores
               </Link>
             </div>
           ) : null}
@@ -395,6 +402,13 @@ export function Header() {
                     onClick={() => setDrawerOpen(false)}
                   >
                     Smart Lights
+                  </Link>
+                  <Link
+                    href="/stores"
+                    className="block text-sm font-medium text-brand-dark hover:text-brand"
+                    onClick={() => setDrawerOpen(false)}
+                  >
+                    Stores
                   </Link>
                   <Link
                     href="/compare"

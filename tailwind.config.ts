@@ -39,6 +39,10 @@ export default {
         bloom: "0 0 0 1px rgba(15,66,143,0.08), 0 18px 50px -20px rgba(15,66,143,0.35)",
         glow: "0 0 40px rgba(15,66,143,0.35)",
       },
+      backgroundImage: {
+        "gradient-conic":
+          "conic-gradient(var(--conic-position), var(--tw-gradient-stops))",
+      },
     },
   },
   plugins: [],

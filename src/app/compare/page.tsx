@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getProductByHandle } from "@/lib/catalog";
 import { CompareTable } from "@/components/compare/CompareTable";
-import { CompareConclusion } from "@/components/compare/CompareConclusion";
 
 export const metadata: Metadata = {
   title: "Compare products",
@@ -59,10 +58,7 @@ export default async function ComparePage({ searchParams }: Props) {
           <CompareTable products={products} />
         </div>
       ) : (
-        <>
-          <CompareTable products={products} />
-          <CompareConclusion products={products} />
-        </>
+        <CompareTable products={products} />
       )}
     </div>
   );

@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { PromoImageSlider } from "@/components/PromoImageSlider";
+import { MotionLink } from "@/components/motion/Reveal";
 
 const promos = [
   {
@@ -36,12 +36,12 @@ export function PromoBanners() {
           >
             <h3 className="font-display text-2xl">{promo.title}</h3>
             <p className="mt-2 text-sm text-white/85">{promo.blurb}</p>
-            <Link
+            <MotionLink
               href={promo.href}
               className="mt-5 inline-flex rounded-md bg-white px-4 py-2 text-sm font-semibold text-brand hover:bg-slate-100"
             >
               Discover Now
-            </Link>
+            </MotionLink>
             <PromoImageSlider images={promo.images} alt={promo.title} />
           </div>
         ))}

@@ -6,6 +6,8 @@ import {
   jsonb,
   uuid,
   primaryKey,
+  boolean,
+  doublePrecision,
 } from "drizzle-orm/pg-core";
 
 export const products = pgTable("products", {
@@ -82,4 +84,22 @@ export const newsletterSubscribers = pgTable("newsletter_subscribers", {
   id: uuid("id").defaultRandom().primaryKey(),
   email: text("email").notNull().unique(),
   createdAt: timestamp("created_at").defaultNow(),
+});
+
+/** Physical Orient Lighting locations and authorized dealers. */
+export const dealers = pgTable("dealers", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  type: text("type").$type<"flagship" | "authorized_dealer">().notNull(),
+  address: text("address").notNull(),
+  city: text("city").notNull(),
+  latitude: doublePrecision("latitude").notNull(),
+  longitude: doublePrecision("longitude").notNull(),
+  phone: text("phone"),
+  whatsapp: text("whatsapp"),
+  hours: text("hours"),
+  verified: boolean("verified").notNull().default(false),
+  isWalkIn: boolean("is_walk_in").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });

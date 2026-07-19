@@ -4,22 +4,22 @@ import { CATEGORY_TILES } from "@/lib/types";
 
 export function CategoryGrid() {
   return (
-    <section className="mx-auto max-w-7xl px-4 py-10">
-      <h2 className="font-display text-2xl text-brand-navy sm:text-3xl">Shop by Category</h2>
-      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
+    <section className="mx-auto max-w-7xl px-4 py-12 sm:py-16">
+      <h2 className="type-display text-[1.65rem] text-brand-navy sm:text-3xl">Shop by Category</h2>
+      <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
         {CATEGORY_TILES.map((tile) => (
           <Link
             key={tile.href + tile.label}
             href={tile.href}
-            className="flex flex-col items-center gap-2 rounded-lg border border-brand-border bg-white px-3 py-5 text-center transition hover:border-brand hover:shadow-sm"
+            className="group flex min-h-[44px] cursor-pointer flex-col items-center gap-3 rounded-2xl border border-brand-border bg-white px-3 py-5 text-center transition duration-200 hover:border-brand hover:shadow-bloom"
           >
-            <span className="relative flex h-14 w-14 items-center justify-center sm:h-16 sm:w-16">
+            <span className="relative flex h-16 w-16 items-center justify-center sm:h-[4.5rem] sm:w-[4.5rem]">
               <Image
                 src={tile.image}
                 alt=""
-                width={64}
-                height={64}
-                className="h-full w-full object-contain"
+                width={72}
+                height={72}
+                className="h-full w-full object-contain transition duration-200 group-hover:scale-105"
               />
             </span>
             <span className="text-sm font-medium text-brand-dark">{tile.label}</span>

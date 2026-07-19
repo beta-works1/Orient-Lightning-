@@ -14,9 +14,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   return [
     { url: `${base}/`, lastModified: now, changeFrequency: "daily", priority: 1 },
+    { url: `${base}/stores`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
     { url: `${base}/search`, lastModified: now, changeFrequency: "weekly", priority: 0.5 },
-    { url: `${base}/blogs/orient-lighting`, lastModified: now, changeFrequency: "weekly", priority: 0.6 },
-    ...getAllCollections().map((c) => ({
+    { url: `${base}/blogs/orient-lighting`, lastModified: now, changeFrequency: "weekly", priority: 0.6 },    ...getAllCollections().map((c) => ({
       url: `${base}/collections/${c.handle}`,
       lastModified: now,
       changeFrequency: "weekly" as const,

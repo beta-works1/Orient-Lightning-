@@ -114,7 +114,7 @@ export function FindYourFit() {
   };
 
   return (
-    <section className="bg-brand-paper py-16 sm:py-24" id="find-your-fit">
+    <section className="section-space bg-brand-paper" id="find-your-fit">
       <div className="mx-auto max-w-7xl px-4">
         <Reveal>
           <div className="mx-auto max-w-2xl text-center">

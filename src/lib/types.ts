@@ -170,9 +170,15 @@ export const CATEGORY_TILES = [
     href: "/collections/spot-light",
     image: "/images/categories/wall-lights-icon.png",
   },
+  {
+    label: "Smart Lights",
+    href: "/collections/smart-lights",
+    image: "/images/categories/fixtures-icon.png",
+  },
 ] as const;
 
 export const FOOTER_LINKS = [
+  { label: "Find a Store", href: "/stores" },
   { label: "Become Our Partner", href: "/pages/become-our-partner" },
   { label: "Terms & Services", href: "/pages/terms-and-conditions" },
   { label: "Privacy Policy", href: "/pages/privacy-policy" },

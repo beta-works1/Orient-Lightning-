@@ -1,67 +1,106 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
+import Link from "next/link";
+import { motion, useReducedMotion } from "framer-motion";
 
-gsap.registerPlugin(ScrollTrigger);
+const EASE = [0.22, 1, 0.36, 1] as const;
+const MotionNextLink = motion.create(Link);
 
-type Props = {
+/** Scroll reveal — opacity + translateY only, once per element. */
+export function Reveal({
+  children,
+  className = "",
+  delay = 0,
+}: {
   children: React.ReactNode;
   className?: string;
-  y?: number;
   delay?: number;
-};
+}) {
+  const reduce = useReducedMotion();
 
-export function Reveal({ children, className = "", y = 16, delay = 0 }: Props) {
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduce) {
-      gsap.set(el, { clearProps: "all", opacity: 1, y: 0 });
-      return;
-    }
-
-    const ctx = gsap.context(() => {
-      gsap.fromTo(
-        el,
-        { opacity: 0.001, y },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.35,
-          delay: Math.min(delay, 0.05),
-          ease: "power2.out",
-          immediateRender: false,
-          scrollTrigger: {
-            trigger: el,
-            start: "top 92%",
-            toggleActions: "play none none none",
-            once: true,
-          },
-        },
-      );
-    }, el);
-
-    const safety = window.setTimeout(() => {
-      if (el && Number.parseFloat(getComputedStyle(el).opacity) < 0.2) {
-        gsap.set(el, { opacity: 1, y: 0, clearProps: "transform" });
-      }
-    }, 800);
-
-    return () => {
-      window.clearTimeout(safety);
-      ctx.revert();
-    };
-  }, [y, delay]);
+  if (reduce) {
+    return <div className={className}>{children}</div>;
+  }
 
   return (
-    <div ref={ref} className={className}>
+    <motion.div
+      className={className}
+      initial={{ opacity: 0, y: 16 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.12 }}
+      transition={{ duration: 0.28, delay: Math.min(delay, 0.12), ease: EASE }}
+    >
       {children}
-    </div>
+    </motion.div>
+  );
+}
+
+/** CTA hover: scale 1.02 (transform) + CSS shadow. Static when reduced-motion. */
+export function MotionLink({
+  href,
+  className = "",
+  children,
+}: {
+  href: string;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  const reduce = useReducedMotion();
+  const classes = `${className} will-change-transform transition-shadow duration-150 hover:shadow-md`;
+
+  if (reduce) {
+    return (
+      <Link href={href} className={className}>
+        {children}
+      </Link>
+    );
+  }
+
+  return (
+    <MotionNextLink
+      href={href}
+      className={classes}
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 1 }}
+      transition={{ type: "spring", stiffness: 420, damping: 28, mass: 0.35 }}
+    >
+      {children}
+    </MotionNextLink>
+  );
+}
+
+export function MotionButton({
+  className = "",
+  children,
+  type = "button",
+  disabled,
+}: {
+  className?: string;
+  children: React.ReactNode;
+  type?: "button" | "submit" | "reset";
+  disabled?: boolean;
+}) {
+  const reduce = useReducedMotion();
+  const classes = `${className} will-change-transform transition-shadow duration-150 hover:shadow-md`;
+
+  if (reduce) {
+    return (
+      <button type={type} className={className} disabled={disabled}>
+        {children}
+      </button>
+    );
+  }
+
+  return (
+    <motion.button
+      type={type}
+      className={classes}
+      disabled={disabled}
+      whileHover={disabled ? undefined : { scale: 1.02 }}
+      whileTap={disabled ? undefined : { scale: 1 }}
+      transition={{ type: "spring", stiffness: 420, damping: 28, mass: 0.35 }}
+    >
+      {children}
+    </motion.button>
   );
 }
