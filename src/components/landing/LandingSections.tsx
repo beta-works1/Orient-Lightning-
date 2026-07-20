@@ -1,5 +1,6 @@
 import { DownloadCatalogue } from "@/components/DownloadCatalogue";
 import { MotionLink } from "@/components/motion/Reveal";
+import { CompareSteps } from "@/components/landing/CompareSteps";
 
 export function LandingCompareCta() {
   return (
@@ -36,20 +37,7 @@ export function LandingCompareCta() {
             Browse by application, download our catalogue, or use product comparison to match the
             right Orient LED to your room, site or project.
           </p>
-          <div className="mt-6 grid gap-3 sm:grid-cols-3">
-            {[
-              { n: "1", t: "Pick a category" },
-              { n: "2", t: "Compare options" },
-              { n: "3", t: "Get matched" },
-            ].map((step) => (
-              <div key={step.n} className="rounded-2xl border border-white/10 bg-brand-navy/40 p-4 text-center">
-                <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-full bg-brand text-sm font-bold text-white">
-                  {step.n}
-                </div>
-                <p className="mt-2 text-xs font-medium text-white/85">{step.t}</p>
-              </div>
-            ))}
-          </div>
+          <CompareSteps />
           <div className="mt-6 flex flex-wrap gap-3">
             <MotionLink
               href="/collections/best-sellers"

@@ -132,10 +132,17 @@ export function FindYourFit() {
           <div className="rounded-3xl border border-brand-border bg-white p-6 shadow-bloom sm:p-8">
             <div className="mb-6 flex gap-2">
               {[0, 1, 2].map((i) => (
-                <div
-                  key={i}
-                  className={`h-1.5 flex-1 rounded-full ${i <= step ? "bg-brand" : "bg-brand-ice"}`}
-                />
+                <div key={i} className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-brand-ice">
+                  <motion.div
+                    className="absolute inset-y-0 left-0 rounded-full bg-brand"
+                    initial={false}
+                    animate={{
+                      width: i < step ? "100%" : i === step ? "100%" : "0%",
+                      opacity: i <= step ? 1 : 0.35,
+                    }}
+                    transition={{ duration: reduce ? 0 : 0.3, ease: [0.16, 1, 0.3, 1] }}
+                  />
+                </div>
               ))}
             </div>
 
@@ -143,9 +150,10 @@ export function FindYourFit() {
               {step === 0 ? (
                 <motion.div
                   key="space"
-                  initial={reduce ? false : { opacity: 0, x: 16 }}
+                  initial={reduce ? false : { opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={reduce ? undefined : { opacity: 0, x: -16 }}
+                  exit={reduce ? undefined : { opacity: 0, x: -20 }}
+                  transition={{ duration: reduce ? 0 : 0.3, ease: [0.16, 1, 0.3, 1] }}
                 >
                   <h3 className="font-display text-xl font-bold text-brand-navy">1. What space are you lighting?</h3>
                   <div className="mt-4 grid gap-3 sm:grid-cols-3">
@@ -172,9 +180,10 @@ export function FindYourFit() {
               {step === 1 ? (
                 <motion.div
                   key="size"
-                  initial={reduce ? false : { opacity: 0, x: 16 }}
+                  initial={reduce ? false : { opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={reduce ? undefined : { opacity: 0, x: -16 }}
+                  exit={reduce ? undefined : { opacity: 0, x: -20 }}
+                  transition={{ duration: reduce ? 0 : 0.3, ease: [0.16, 1, 0.3, 1] }}
                 >
                   <h3 className="font-display text-xl font-bold text-brand-navy">2. How large is the area?</h3>
                   <div className="mt-4 grid gap-3 sm:grid-cols-3">
@@ -203,9 +212,10 @@ export function FindYourFit() {
               {step === 2 && !result ? (
                 <motion.div
                   key="priority"
-                  initial={reduce ? false : { opacity: 0, x: 16 }}
+                  initial={reduce ? false : { opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={reduce ? undefined : { opacity: 0, x: -16 }}
+                  exit={reduce ? undefined : { opacity: 0, x: -20 }}
+                  transition={{ duration: reduce ? 0 : 0.3, ease: [0.16, 1, 0.3, 1] }}
                 >
                   <h3 className="font-display text-xl font-bold text-brand-navy">3. What matters most?</h3>
                   <div className="mt-4 grid gap-3">
@@ -232,8 +242,9 @@ export function FindYourFit() {
               {step === 3 && result ? (
                 <motion.div
                   key="result"
-                  initial={reduce ? false : { opacity: 0, y: 12 }}
+                  initial={reduce ? false : { opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: reduce ? 0 : 0.3, ease: [0.16, 1, 0.3, 1] }}
                 >
                   <p className="text-xs font-semibold uppercase tracking-[0.25em] text-brand">Your match</p>
                   <h3 className="mt-2 font-display text-3xl font-extrabold text-brand-navy">{result.title}</h3>

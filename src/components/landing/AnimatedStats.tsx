@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import gsap from "gsap";
+import { useEffect, useRef, useState } from "react";
+import { motion, useInView, useReducedMotion } from "framer-motion";
 import { Reveal } from "@/components/motion/Reveal";
+import { EASE_REVEAL, DURATION_REVEAL } from "@/lib/motion";
 
 type Stat = {
   value: number;
@@ -10,59 +11,39 @@ type Stat = {
   label: string;
 };
 
-export function AnimatedStats({ stats }: { stats: Stat[] }) {
-  const rootRef = useRef<HTMLDivElement>(null);
+function CountCell({ value, suffix, reduce }: { value: number; suffix?: string; reduce: boolean | null }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const inView = useInView(ref, { once: true, amount: 0.5 });
+  const [display, setDisplay] = useState(reduce ? value : 0);
 
   useEffect(() => {
-    const root = rootRef.current;
-    if (!root) return;
-
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const nums = root.querySelectorAll<HTMLElement>("[data-count]");
-
+    if (!inView) return;
     if (reduce) {
-      nums.forEach((el) => {
-        el.textContent = el.dataset.count || "0";
-      });
+      setDisplay(value);
       return;
     }
-
-    const animated = new WeakSet<HTMLElement>();
-
-    const run = (el: HTMLElement) => {
-      if (animated.has(el)) return;
-      animated.add(el);
-      const target = Number(el.dataset.count || 0);
-      const obj = { n: 0 };
-      gsap.to(obj, {
-        n: target,
-        duration: 1.6,
-        ease: "power2.out",
-        onUpdate: () => {
-          el.textContent = String(Math.round(obj.n));
-        },
-        onComplete: () => {
-          el.textContent = String(target);
-        },
-      });
+    let start: number | null = null;
+    const duration = 1600;
+    const tick = (ts: number) => {
+      if (start === null) start = ts;
+      const p = Math.min((ts - start) / duration, 1);
+      const eased = 1 - (1 - p) ** 3;
+      setDisplay(Math.round(value * eased));
+      if (p < 1) requestAnimationFrame(tick);
     };
+    requestAnimationFrame(tick);
+  }, [inView, value, reduce]);
 
-    const io = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) run(entry.target as HTMLElement);
-        });
-      },
-      { threshold: 0.4, rootMargin: "0px 0px -8% 0px" },
-    );
+  return (
+    <span ref={ref} className="tabular-nums">
+      {display}
+      {suffix || ""}
+    </span>
+  );
+}
 
-    nums.forEach((el) => io.observe(el));
-
-    return () => {
-      io.disconnect();
-      nums.forEach((el) => gsap.killTweensOf(el));
-    };
-  }, [stats]);
+export function AnimatedStats({ stats }: { stats: Stat[] }) {
+  const reduce = useReducedMotion();
 
   return (
     <section className="bg-brand-navy py-16 text-white sm:py-20">
@@ -80,18 +61,21 @@ export function AnimatedStats({ stats }: { stats: Stat[] }) {
           </div>
         </Reveal>
 
-        <div ref={rootRef} className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {stats.map((s) => (
-            <div
+        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {stats.map((s, i) => (
+            <motion.div
               key={s.label}
+              initial={reduce ? false : { opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.4 }}
+              transition={{ delay: reduce ? 0 : i * 0.08, duration: DURATION_REVEAL, ease: EASE_REVEAL }}
               className="rounded-2xl border border-white/10 bg-white/5 px-5 py-7 text-center"
             >
-              <div className="font-display text-4xl font-extrabold tabular-nums text-white">
-                <span data-count={s.value}>0</span>
-                {s.suffix || ""}
+              <div className="font-display text-4xl font-extrabold text-white">
+                <CountCell value={s.value} suffix={s.suffix} reduce={reduce} />
               </div>
               <div className="mt-2 text-sm text-white/75">{s.label}</div>
-            </div>
+            </motion.div>
           ))}
         </div>
       </div>

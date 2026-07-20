@@ -7,6 +7,19 @@
   --foreground: #343538;
   --brand: #0f428f;
   --brand-navy: #162950;
+
+  /* Motion primer — ui-ux-pro-max Motion-Driven (colors unchanged) */
+  --motion-reveal: 350ms;
+  --motion-hover: 300ms;
+  --motion-press: 200ms;
+  --motion-ease-reveal: cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-ease-hover: cubic-bezier(0.22, 1, 0.36, 1);
+  --parallax-bg: 28px;
+  --parallax-mid: 40px;
+  --parallax-fg: -36px;
+  --elevation-1: 0 1px 3px rgba(15, 66, 143, 0.08);
+  --elevation-2: 0 4px 16px rgba(15, 66, 143, 0.12);
+  --elevation-3: 0 12px 32px rgba(15, 66, 143, 0.18);
 }
 
 body {
@@ -251,6 +264,39 @@ html.intro-pending {
   }
 }
 
+/* Dimensional layering — depth via shadow + z-index, not WebGL */
+.elev-card {
+  box-shadow: var(--elevation-1);
+  transition:
+    box-shadow var(--motion-hover) var(--motion-ease-hover),
+    transform var(--motion-hover) var(--motion-ease-hover);
+  will-change: transform;
+}
+
+.elev-card:hover,
+.elev-card:focus-within {
+  box-shadow: var(--elevation-3);
+}
+
+.tap-press {
+  transition: transform var(--motion-press) var(--motion-ease-hover);
+}
+
+.tap-press:active {
+  transform: scale(0.97);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .elev-card,
+  .tap-press {
+    transition: none;
+  }
+
+  .tap-press:active {
+    transform: none;
+  }
+}
+
 .product-card-bloom {
   position: relative;
 }
@@ -482,5 +528,57 @@ html.intro-pending {
 
   .shop-cat-card__halo {
     display: none;
+  }
+}
+
+@keyframes hero-ken-burns {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.08);
+  }
+}
+
+.hero-ken-burns {
+  animation: hero-ken-burns 22s ease-out forwards;
+  will-change: transform;
+}
+
+.nav-sweep-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -0.2rem;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    currentColor 45%,
+    currentColor 55%,
+    transparent 100%
+  );
+  transform: scaleX(0);
+  transform-origin: left center;
+  opacity: 0;
+  transition:
+    transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.25s ease;
+}
+
+.nav-sweep-link:hover::after,
+.nav-sweep-link:focus-visible::after {
+  transform: scaleX(1);
+  opacity: 0.85;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-ken-burns {
+    animation: none;
+  }
+
+  .nav-sweep-link::after {
+    transition: none;
   }
 }

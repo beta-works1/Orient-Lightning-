@@ -30,10 +30,23 @@
 
 ## Cards & interaction
 
-- Product cards: `rounded-2xl`, `border-brand-border`, `hover:shadow-bloom`, bloom glow on hover
+- Product cards: `rounded-2xl`, `border-brand-border`, `.elev-card` dimensional layering (shadow depth, not WebGL)
 - `cursor-pointer` on every interactive control
-- Transitions 150–300ms; respect `prefers-reduced-motion`
+- Transitions use motion tokens: `--motion-reveal` (350ms), `--motion-hover` (300ms), `--motion-press` (200ms)
+- Respect `prefers-reduced-motion`
 - Visible `focus-visible` ring using Signature Blue
+
+## Motion primer (ui-ux-pro-max — colors still locked)
+
+Three patterns baked into `src/lib/motion.ts` + CSS `:root` tokens:
+
+| Pattern | Source search | Orient implementation |
+|---|---|---|
+| **Motion-Driven scroll reveal** | `motion driven scroll reveal` | `whileInView` + `VIEWPORT_ONCE`, 350ms, `transform`/`opacity` only, parallax on flagships (`PARALLAX` constants) |
+| **Micro-interactions** | `micro-interactions hover state` | 300ms hovers, 200ms press (`LAYER_PRESS_SCALE`), `MotionLink`/`CompareToggle` tactile states |
+| **Dimensional layering** | `3d product preview` (lighter alt) | `.elev-card` elevation shadows + image crossfade on product cards — no Three.js / `model-viewer` |
+
+Do **not** swap palette from skill rows. Pull timing, easing, and interaction patterns only.
 
 ## Anti-patterns (from skill — still apply)
 

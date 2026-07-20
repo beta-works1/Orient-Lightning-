@@ -2,8 +2,16 @@
 
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
+import {
+  DURATION_PRESS,
+  DURATION_REVEAL,
+  EASE_HOVER,
+  EASE_REVEAL,
+  LAYER_HOVER_SCALE,
+  LAYER_PRESS_SCALE,
+  VIEWPORT_ONCE,
+} from "@/lib/motion";
 
-const EASE = [0.22, 1, 0.36, 1] as const;
 const MotionNextLink = motion.create(Link);
 
 /** Scroll reveal — opacity + translateY only, once per element. */
@@ -27,15 +35,19 @@ export function Reveal({
       className={className}
       initial={{ opacity: 0, y: 16 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.12 }}
-      transition={{ duration: 0.28, delay: Math.min(delay, 0.12), ease: EASE }}
+      viewport={VIEWPORT_ONCE}
+      transition={{
+        duration: DURATION_REVEAL,
+        delay: Math.min(delay, 0.12),
+        ease: EASE_REVEAL,
+      }}
     >
       {children}
     </motion.div>
   );
 }
 
-/** CTA hover: scale 1.02 (transform) + CSS shadow. Static when reduced-motion. */
+/** CTA hover: scale + shadow. Static when reduced-motion. */
 export function MotionLink({
   href,
   className = "",
@@ -46,7 +58,7 @@ export function MotionLink({
   children: React.ReactNode;
 }) {
   const reduce = useReducedMotion();
-  const classes = `${className} will-change-transform transition-shadow duration-150 hover:shadow-md`;
+  const classes = `${className} will-change-transform transition-shadow duration-[var(--motion-hover)] hover:shadow-md`;
 
   if (reduce) {
     return (
@@ -60,9 +72,9 @@ export function MotionLink({
     <MotionNextLink
       href={href}
       className={classes}
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 1 }}
-      transition={{ type: "spring", stiffness: 420, damping: 28, mass: 0.35 }}
+      whileHover={{ scale: LAYER_HOVER_SCALE }}
+      whileTap={{ scale: LAYER_PRESS_SCALE }}
+      transition={{ duration: DURATION_PRESS, ease: EASE_HOVER }}
     >
       {children}
     </MotionNextLink>
@@ -81,7 +93,7 @@ export function MotionButton({
   disabled?: boolean;
 }) {
   const reduce = useReducedMotion();
-  const classes = `${className} will-change-transform transition-shadow duration-150 hover:shadow-md`;
+  const classes = `${className} will-change-transform transition-shadow duration-[var(--motion-hover)] hover:shadow-md`;
 
   if (reduce) {
     return (
@@ -96,9 +108,9 @@ export function MotionButton({
       type={type}
       className={classes}
       disabled={disabled}
-      whileHover={disabled ? undefined : { scale: 1.02 }}
-      whileTap={disabled ? undefined : { scale: 1 }}
-      transition={{ type: "spring", stiffness: 420, damping: 28, mass: 0.35 }}
+      whileHover={disabled ? undefined : { scale: LAYER_HOVER_SCALE }}
+      whileTap={disabled ? undefined : { scale: LAYER_PRESS_SCALE }}
+      transition={{ duration: DURATION_PRESS, ease: EASE_HOVER }}
     >
       {children}
     </motion.button>

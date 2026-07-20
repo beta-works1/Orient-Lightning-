@@ -5,13 +5,14 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { CATEGORY_TILES } from "@/lib/types";
+import { DURATION_REVEAL, EASE_REVEAL, STAGGER_CHILD } from "@/lib/motion";
 
-const EASE = [0.16, 1, 0.3, 1] as const;
+const EASE = EASE_REVEAL;
 
 const gridVariants = {
   hidden: {},
   show: {
-    transition: { staggerChildren: 0.065, delayChildren: 0.08 },
+    transition: { staggerChildren: STAGGER_CHILD, delayChildren: 0.08 },
   },
 };
 
@@ -19,20 +20,20 @@ const gridVariants = {
 const cardVariants = {
   hidden: {
     opacity: 0,
-    y: 14,
+    scale: 0.92,
     filter: "brightness(0.35) saturate(0.45)",
   },
   show: {
     opacity: 1,
-    y: 0,
+    scale: 1,
     filter: [
       "brightness(1.18) saturate(1.12)",
       "brightness(1.18) saturate(1.12)",
       "brightness(1) saturate(1)",
     ],
     transition: {
-      opacity: { duration: 0.22, ease: EASE },
-      y: { duration: 0.28, ease: EASE },
+      opacity: { duration: DURATION_REVEAL, ease: EASE },
+      scale: { duration: DURATION_REVEAL, ease: EASE },
       filter: { duration: 0.42, times: [0, 0.35, 1], ease: EASE },
     },
   },

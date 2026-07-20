@@ -58,7 +58,7 @@ export function Testimonials() {
 
   useEffect(() => {
     if (reduce || TESTIMONIALS.length < 2) return;
-    const id = window.setInterval(() => setIndex((i) => (i + 1) % TESTIMONIALS.length), 5500);
+    const id = window.setInterval(() => setIndex((i) => (i + 1) % TESTIMONIALS.length), 6000);
     return () => window.clearInterval(id);
   }, [reduce]);
 
@@ -79,10 +79,10 @@ export function Testimonials() {
           <AnimatePresence mode="wait">
             <motion.blockquote
               key={TESTIMONIALS[index].name}
-              initial={reduce ? false : { opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={reduce ? undefined : { opacity: 0, y: -8 }}
-              transition={{ duration: 0.35 }}
+              initial={reduce ? false : { opacity: 0, x: 24 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={reduce ? undefined : { opacity: 0, x: -24 }}
+              transition={{ duration: reduce ? 0 : 0.4, ease: [0.16, 1, 0.3, 1] }}
               className="rounded-3xl border border-brand-border bg-white p-8 shadow-sm sm:p-10"
             >
               <p className="font-display text-xl leading-relaxed text-brand-navy sm:text-2xl">
@@ -111,7 +111,7 @@ export function Testimonials() {
                 aria-label={`Show testimonial from ${t.name}`}
                 aria-current={i === index ? "true" : undefined}
                 onClick={() => setIndex(i)}
-                className="flex h-11 w-11 cursor-pointer items-center justify-center"
+                className="flex h-11 w-11 cursor-pointer items-center justify-center active:scale-95"
               >
                 <span
                   className={`block h-2.5 w-2.5 rounded-full transition ${
@@ -121,25 +121,6 @@ export function Testimonials() {
               </button>
             ))}
           </div>
-        </div>
-
-        {/* Staggered desktop peek of all quotes */}
-        <div className="mt-14 hidden gap-4 lg:grid lg:grid-cols-3">
-          {TESTIMONIALS.map((t, i) => (
-            <button
-              key={t.name}
-              type="button"
-              onClick={() => setIndex(i)}
-              className={`cursor-pointer rounded-2xl border p-5 text-left transition duration-200 ${
-                i === index
-                  ? "border-brand bg-white shadow-bloom"
-                  : "border-brand-border bg-white/70 hover:border-brand/40"
-              } ${i === 1 ? "lg:translate-y-4" : ""}`}
-            >
-              <p className="line-clamp-3 text-sm leading-relaxed text-brand-dark">&ldquo;{t.quote}&rdquo;</p>
-              <div className="mt-4 text-sm font-semibold text-brand">{t.name}</div>
-            </button>
-          ))}
         </div>
       </div>
     </section>

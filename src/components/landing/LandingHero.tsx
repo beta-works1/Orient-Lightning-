@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { MotionLink } from "@/components/motion/Reveal";
+import { EASE_REVEAL } from "@/lib/motion";
 
 const SLIDES = [
   {
@@ -50,23 +51,30 @@ const SLIDES = [
   },
 ] as const;
 
-const EASE = [0.22, 1, 0.36, 1] as const;
+const EASE = EASE_REVEAL;
 
-const copyParent = {
-  hidden: {},
-  show: {
-    transition: { staggerChildren: 0.08 },
-  },
-};
-
-const copyChild = {
-  hidden: { opacity: 0, y: 12 },
-  show: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.28, ease: EASE },
-  },
-};
+function HeroTitle({ text, reduce }: { text: string; reduce: boolean | null }) {
+  const words = text.split(/\s+/);
+  return (
+    <h1 className="font-display text-[2.35rem] font-extrabold uppercase leading-[1.02] tracking-tight text-white sm:text-5xl lg:text-6xl xl:text-[4.25rem]">
+      {words.map((word, i) => (
+        <motion.span
+          key={`${word}-${i}`}
+          className="mr-[0.28em] inline-block last:mr-0"
+          initial={reduce ? false : { opacity: 0, clipPath: "inset(0 100% 0 0)" }}
+          animate={{ opacity: 1, clipPath: "inset(0 0% 0 0)" }}
+          transition={{
+            duration: reduce ? 0 : 0.42,
+            delay: reduce ? 0 : 0.12 + i * 0.07,
+            ease: EASE,
+          }}
+        >
+          {word}
+        </motion.span>
+      ))}
+    </h1>
+  );
+}
 
 function ArrowIcon({ dir }: { dir: "left" | "right" }) {
   return (
@@ -101,17 +109,19 @@ export function LandingHero() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: reduce ? 0 : 0.28, ease: EASE }}
+          transition={{ duration: reduce ? 0 : 0.5, ease: EASE }}
         >
-          <Image
-            src={slide.image}
-            alt=""
-            fill
-            priority={index === 0}
-            sizes="100vw"
-            quality={90}
-            className="object-cover object-center"
-          />
+          <div className={`absolute inset-0 ${reduce ? "" : "hero-ken-burns"}`}>
+            <Image
+              src={slide.image}
+              alt=""
+              fill
+              priority={index === 0}
+              sizes="100vw"
+              quality={90}
+              className="object-cover object-center"
+            />
+          </div>
           <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/25 to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/25" />
         </motion.div>
@@ -119,26 +129,22 @@ export function LandingHero() {
 
       <div className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-end px-4 pb-28 pt-28 sm:pb-32 lg:justify-center lg:pb-28 lg:pt-20">
         <AnimatePresence mode="wait">
-          <motion.div
-            key={slide.title}
-            className="max-w-2xl"
-            variants={reduce ? undefined : copyParent}
-            initial={reduce ? false : "hidden"}
-            animate={reduce ? undefined : "show"}
-          >
-            <motion.h1
-              variants={reduce ? undefined : copyChild}
-              className="font-display text-[2.35rem] font-extrabold uppercase leading-[1.02] tracking-tight text-white sm:text-5xl lg:text-6xl xl:text-[4.25rem]"
-            >
-              {slide.title}
-            </motion.h1>
+          <motion.div key={slide.title} className="max-w-2xl">
+            <HeroTitle text={slide.title} reduce={reduce} />
             <motion.p
-              variants={reduce ? undefined : copyChild}
+              initial={reduce ? false : { opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: reduce ? 0 : 0.4, delay: reduce ? 0 : 0.55, ease: EASE }}
               className="mt-5 max-w-md text-base text-white/90 sm:text-lg"
             >
               {slide.description}
             </motion.p>
-            <motion.div variants={reduce ? undefined : copyChild} className="mt-8">
+            <motion.div
+              initial={reduce ? false : { opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: reduce ? 0 : 0.35, delay: reduce ? 0 : 0.72, ease: EASE }}
+              className="mt-8"
+            >
               <MotionLink
                 href={slide.href}
                 className="inline-flex rounded-full bg-brand px-7 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-white shadow-sm transition-shadow duration-150 hover:bg-white hover:text-brand hover:shadow-md"
@@ -172,7 +178,7 @@ export function LandingHero() {
               type="button"
               aria-label="Previous slide"
               onClick={() => go(-1)}
-              className="flex h-11 w-11 items-center justify-center rounded-full border border-white/50 text-white transition duration-150 hover:border-white hover:bg-white/10"
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-white/50 text-white transition duration-150 hover:border-white hover:bg-white/10 active:scale-95"
             >
               <ArrowIcon dir="left" />
             </button>
@@ -180,7 +186,7 @@ export function LandingHero() {
               type="button"
               aria-label="Next slide"
               onClick={() => go(1)}
-              className="flex h-11 w-11 items-center justify-center rounded-full border border-white/50 text-white transition duration-150 hover:border-white hover:bg-white/10"
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-white/50 text-white transition duration-150 hover:border-white hover:bg-white/10 active:scale-95"
             >
               <ArrowIcon dir="right" />
             </button>

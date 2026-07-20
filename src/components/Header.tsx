@@ -76,32 +76,14 @@ function NavUnderlineLink({
   overlay: boolean;
 }) {
   return (
-    <motion.div
-      className="relative inline-flex"
-      initial="rest"
-      animate="rest"
-      whileHover={reduce ? undefined : "hover"}
+    <Link
+      href={href}
+      className={`nav-sweep-link relative inline-flex text-sm font-medium uppercase tracking-wide ${
+        overlay ? "text-white hover:text-white/80" : "text-brand-dark hover:text-brand"
+      }`}
     >
-      <Link
-        href={href}
-        className={`text-sm font-medium uppercase tracking-wide ${
-          overlay ? "text-white hover:text-white/80" : "text-brand-dark hover:text-brand"
-        }`}
-      >
-        {children}
-      </Link>
-      <motion.span
-        aria-hidden
-        className={`pointer-events-none absolute inset-x-0 -bottom-1 h-0.5 origin-left ${
-          overlay ? "bg-white" : "bg-brand"
-        }`}
-        variants={{
-          rest: { scaleX: 0, opacity: 0 },
-          hover: { scaleX: 1, opacity: 1 },
-        }}
-        transition={{ duration: reduce ? 0 : 0.15, ease: easeOut }}
-      />
-    </motion.div>
+      {children}
+    </Link>
   );
 }
 
@@ -234,13 +216,22 @@ export function Header() {
           className={`will-change-transform ${
             overlay
               ? "border-b border-transparent bg-transparent"
-              : "border-b border-brand-border bg-white/95 backdrop-blur"
+              : scrolled
+                ? "border-b border-brand-border/80 bg-white/90 shadow-sm backdrop-blur-md"
+                : "border-b border-brand-border bg-white/95 backdrop-blur"
           }`}
           initial={false}
-          animate={{ y: hidden ? "-100%" : "0%" }}
+          animate={{
+            y: hidden ? "-100%" : "0%",
+            scale: reduce ? 1 : scrolled && !overlay ? 0.985 : 1,
+          }}
           transition={headerTransition}
         >
-          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:py-5">
+          <div
+            className={`mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 transition-[padding] duration-300 ${
+              scrolled && !overlay ? "py-3 sm:py-3.5" : "py-4 sm:py-5"
+            }`}
+          >
             <motion.div
               className="shrink-0"
               whileHover={reduce ? undefined : { scale: 1.04 }}

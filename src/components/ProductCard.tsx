@@ -6,8 +6,14 @@ import { motion, useReducedMotion } from "framer-motion";
 import type { Product } from "@/lib/types";
 import { formatPrice } from "@/lib/format";
 import { CompareToggle } from "@/components/compare/CompareToggle";
-
-const EASE = [0.22, 1, 0.36, 1] as const;
+import {
+  DURATION_HOVER,
+  DURATION_REVEAL,
+  EASE_HOVER,
+  EASE_REVEAL,
+  LAYER_HOVER_LIFT,
+  VIEWPORT_ONCE,
+} from "@/lib/motion";
 
 export function ProductCard({
   product,
@@ -17,28 +23,29 @@ export function ProductCard({
   index?: number;
 }) {
   const reduce = useReducedMotion();
-  const image = product.images[0];
+  const primary = product.images[0];
+  const secondary = product.images[1];
   const onSale = product.compareAtPrice != null && product.compareAtPrice > product.price;
   const watt = product.facets?.wattage?.[0];
   const cct = product.facets?.colorTemp?.[0];
 
   return (
     <motion.article
-      className="product-card-bloom group relative flex h-full flex-col overflow-visible rounded-2xl border border-brand-border bg-white shadow-sm transition-shadow duration-150 hover:shadow-bloom"
+      className="product-card-bloom elev-card group relative flex h-full flex-col overflow-visible rounded-2xl border border-brand-border bg-white"
       initial={reduce ? false : { opacity: 0, y: 14 }}
       whileInView={reduce ? undefined : { opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.2 }}
+      viewport={VIEWPORT_ONCE}
       transition={{
-        duration: 0.25,
+        duration: DURATION_REVEAL,
         delay: reduce ? 0 : Math.min(index * 0.05, 0.25),
-        ease: EASE,
+        ease: EASE_REVEAL,
       }}
       whileHover={
         reduce
           ? undefined
           : {
-              y: -4,
-              transition: { duration: 0.15, ease: "easeOut" },
+              y: LAYER_HOVER_LIFT,
+              transition: { duration: DURATION_HOVER, ease: EASE_HOVER },
             }
       }
     >
@@ -47,14 +54,30 @@ export function ProductCard({
           href={`/products/${product.handle}`}
           className="relative block aspect-square cursor-pointer bg-brand-ice/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
         >
-          {image ? (
-            <Image
-              src={image}
-              alt={product.title}
-              fill
-              sizes="(max-width:768px) 50vw, 25vw"
-              className="object-contain p-3"
-            />
+          {primary ? (
+            <>
+              <Image
+                src={primary}
+                alt={product.title}
+                fill
+                sizes="(max-width:768px) 50vw, 25vw"
+                className={`object-contain p-3 transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                  secondary
+                    ? "group-hover:opacity-0 group-focus-within:opacity-0"
+                    : "will-change-transform group-hover:scale-[1.03] group-focus-within:scale-[1.03]"
+                }`}
+              />
+              {secondary ? (
+                <Image
+                  src={secondary}
+                  alt=""
+                  fill
+                  sizes="(max-width:768px) 50vw, 25vw"
+                  className="absolute inset-0 object-contain p-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-within:opacity-100"
+                  aria-hidden
+                />
+              ) : null}
+            </>
           ) : (
             <div className="flex h-full items-center justify-center text-sm text-brand-muted">No image</div>
           )}

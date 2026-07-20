@@ -1,7 +1,26 @@
+"use client";
+
 import Link from "next/link";
-import { BrandLogo } from "@/components/BrandLogo";
 import { FOOTER_LINKS, SITE } from "@/lib/types";
 import { NewsletterForm } from "./NewsletterForm";
+import { BrandLogo } from "@/components/BrandLogo";
+
+function FooterLink({ href, children, external }: { href: string; children: React.ReactNode; external?: boolean }) {
+  const cls =
+    "relative inline-block text-brand-dark transition-colors duration-200 hover:text-brand focus-visible:text-brand after:absolute after:inset-x-0 after:-bottom-0.5 after:h-px after:origin-left after:scale-x-0 after:bg-brand after:transition-transform after:duration-200 hover:after:scale-x-100 focus-visible:after:scale-x-100";
+  if (external) {
+    return (
+      <a href={href} target="_blank" rel="noopener noreferrer" className={cls}>
+        {children}
+      </a>
+    );
+  }
+  return (
+    <Link href={href} className={cls}>
+      {children}
+    </Link>
+  );
+}
 
 export function Footer() {
   return (
@@ -27,19 +46,15 @@ export function Footer() {
           <h3 className="font-display text-lg text-brand-navy">Contact</h3>
           <ul className="mt-3 space-y-2 text-sm">
             <li>
-              <a className="hover:text-brand" href={`mailto:${SITE.emailSales}`}>
-                {SITE.emailSales}
-              </a>
+              <FooterLink href={`mailto:${SITE.emailSales}`}>{SITE.emailSales}</FooterLink>
             </li>
             <li>
-              <a className="hover:text-brand" href={`mailto:${SITE.emailCare}`}>
-                {SITE.emailCare}
-              </a>
+              <FooterLink href={`mailto:${SITE.emailCare}`}>{SITE.emailCare}</FooterLink>
             </li>
             <li>
-              <a className="hover:text-brand" href={`tel:${SITE.phoneDisplay.replace(/\s/g, "")}`}>
+              <FooterLink href={`tel:${SITE.phoneDisplay.replace(/\s/g, "")}`}>
                 {SITE.phoneDisplay}
-              </a>
+              </FooterLink>
             </li>
             <li className="text-brand-muted">{SITE.hours}</li>
           </ul>
@@ -50,20 +65,13 @@ export function Footer() {
           <ul className="mt-3 space-y-2 text-sm">
             {FOOTER_LINKS.map((link) => (
               <li key={link.href}>
-                <Link href={link.href} className="hover:text-brand">
-                  {link.label}
-                </Link>
+                <FooterLink href={link.href}>{link.label}</FooterLink>
               </li>
             ))}
             <li>
-              <a
-                href={SITE.darazUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-medium text-brand hover:underline"
-              >
+              <FooterLink href={SITE.darazUrl} external>
                 Shop on Daraz
-              </a>
+              </FooterLink>
             </li>
           </ul>
         </div>
