@@ -6,14 +6,14 @@ type Props = { params: Promise<{ handle: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { handle } = await params;
-  const page = getPage(handle);
+  const page = await getPage(handle);
   if (!page) return { title: "Page" };
   return { title: page.title };
 }
 
 export default async function StaticPage({ params }: Props) {
   const { handle } = await params;
-  const page = getPage(handle);
+  const page = await getPage(handle);
   if (!page) notFound();
 
   return (

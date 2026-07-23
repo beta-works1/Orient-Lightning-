@@ -10,6 +10,8 @@ import {
   doublePrecision,
 } from "drizzle-orm/pg-core";
 
+export type ProductStatus = "draft" | "published";
+
 export const products = pgTable("products", {
   id: text("id").primaryKey(),
   handle: text("handle").notNull().unique(),
@@ -18,6 +20,9 @@ export const products = pgTable("products", {
   price: numeric("price", { precision: 12, scale: 2 }).notNull(),
   compareAtPrice: numeric("compare_at_price", { precision: 12, scale: 2 }),
   sku: text("sku").notNull().default(""),
+  productType: text("product_type").notNull().default(""),
+  vendor: text("vendor").notNull().default("Orient"),
+  status: text("status").$type<ProductStatus>().notNull().default("published"),
   images: jsonb("images").$type<string[]>().notNull().default([]),
   variants: jsonb("variants")
     .$type<
@@ -27,6 +32,10 @@ export const products = pgTable("products", {
         price: number;
         compareAtPrice?: number | null;
         sku: string;
+        available?: boolean;
+        option1?: string | null;
+        option2?: string | null;
+        option3?: string | null;
       }[]
     >()
     .notNull()
@@ -38,8 +47,9 @@ export const products = pgTable("products", {
     .default({ wattage: [], colorTemp: [] }),
   seoTitle: text("seo_title").notNull().default(""),
   seoDescription: text("seo_description").notNull().default(""),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  publishedAt: timestamp("published_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
 
 export const collections = pgTable("collections", {
@@ -69,7 +79,7 @@ export const blogPosts = pgTable("blog_posts", {
   title: text("title").notNull(),
   excerpt: text("excerpt").notNull().default(""),
   body: text("body").notNull().default(""),
-  publishedAt: timestamp("published_at"),
+  publishedAt: timestamp("published_at", { withTimezone: true }),
   image: text("image"),
 });
 
@@ -83,10 +93,16 @@ export const pages = pgTable("pages", {
 export const newsletterSubscribers = pgTable("newsletter_subscribers", {
   id: uuid("id").defaultRandom().primaryKey(),
   email: text("email").notNull().unique(),
-  createdAt: timestamp("created_at").defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 
-/** Physical Orient Lighting locations and authorized dealers. */
+export const adminUsers = pgTable("admin_users", {
+  id: uuid("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  role: text("role").notNull().default("admin"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
 export const dealers = pgTable("dealers", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
@@ -100,6 +116,6 @@ export const dealers = pgTable("dealers", {
   hours: text("hours"),
   verified: boolean("verified").notNull().default(false),
   isWalkIn: boolean("is_walk_in").notNull().default(false),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });

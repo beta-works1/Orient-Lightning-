@@ -15,7 +15,7 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { handle } = await params;
-  const collection = getCollectionByHandle(handle);
+  const collection = await getCollectionByHandle(handle);
   if (!collection) return { title: "Collection" };
   return {
     title: collection.title,
@@ -26,14 +26,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function CollectionPage({ params, searchParams }: Props) {
   const { handle } = await params;
   const sp = await searchParams;
-  const collection = getCollectionByHandle(handle);
+  const collection = await getCollectionByHandle(handle);
   if (!collection) notFound();
 
   const wattage = typeof sp.wattage === "string" ? sp.wattage : undefined;
   const colorTemp = typeof sp.colorTemp === "string" ? sp.colorTemp : undefined;
   const sort = typeof sp.sort === "string" ? sp.sort : undefined;
 
-  const products = filterProducts(getProductsForCollection(handle), {
+  const products = filterProducts(await getProductsForCollection(handle), {
     wattage,
     colorTemp,
     sort,

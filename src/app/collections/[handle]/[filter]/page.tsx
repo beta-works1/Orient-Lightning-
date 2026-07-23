@@ -13,7 +13,7 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { handle, filter } = await params;
-  const collection = getCollectionByHandle(handle);
+  const collection = await getCollectionByHandle(handle);
   return {
     title: collection ? `${collection.title} — ${filter}` : filter,
   };
@@ -21,13 +21,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function CollectionFilterPage({ params }: Props) {
   const { handle, filter } = await params;
-  const collection = getCollectionByHandle(handle);
+  const collection = await getCollectionByHandle(handle);
   if (!collection) notFound();
 
   // Color-temp style filters like 6500k
   const colorTempMatch = filter.match(/^(\d{4})k$/i);
   if (colorTempMatch) {
-    const products = filterProducts(getProductsForCollection(handle), {
+    const products = filterProducts(await getProductsForCollection(handle), {
       colorTemp: colorTempMatch[1],
     });
     return (

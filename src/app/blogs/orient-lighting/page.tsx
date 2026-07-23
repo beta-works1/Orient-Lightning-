@@ -8,8 +8,8 @@ export const metadata: Metadata = {
   description: "News and guides from Orient Lighting.",
 };
 
-export default function BlogIndexPage() {
-  const posts = getBlogPosts();
+export default async function BlogIndexPage() {
+  const posts = await getBlogPosts();
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">

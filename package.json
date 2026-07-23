@@ -9,11 +9,13 @@
     "lint": "next lint",
     "seed": "tsx scripts/seed.ts && tsx scripts/apply-catalogue-descriptions.ts",
     "seed:dealers": "tsx scripts/seed-dealers.ts",
+    "seed:supabase": "tsx scripts/migrate-seeded-to-supabase.ts && tsx scripts/migrate-seeded-joins.ts",
     "download:assets": "node scripts/download-assets.mjs",
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.110.7",
     "drizzle-orm": "^0.45.2",
     "framer-motion": "^12.42.2",

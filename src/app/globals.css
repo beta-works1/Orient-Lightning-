@@ -536,12 +536,12 @@ html.intro-pending {
     transform: scale(1);
   }
   to {
-    transform: scale(1.08);
+    transform: scale(1.12);
   }
 }
 
 .hero-ken-burns {
-  animation: hero-ken-burns 22s ease-out forwards;
+  animation: hero-ken-burns 18s ease-out forwards;
   will-change: transform;
 }
 

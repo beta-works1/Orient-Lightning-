@@ -24,9 +24,9 @@ export default async function ComparePage({ searchParams }: Props) {
     ),
   ].slice(0, 4);
 
-  const products = handles
-    .map((h) => getProductByHandle(h))
-    .filter((p): p is NonNullable<typeof p> => Boolean(p));
+  const products = (
+    await Promise.all(handles.map((h) => getProductByHandle(h)))
+  ).filter((p): p is NonNullable<typeof p> => Boolean(p));
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">

@@ -9,7 +9,7 @@ type Props = { params: Promise<{ handle: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { handle } = await params;
-  const product = getProductByHandle(handle);
+  const product = await getProductByHandle(handle);
   if (!product) return { title: "Product" };
   return {
     title: product.seoTitle || product.title,
@@ -24,10 +24,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ProductPage({ params }: Props) {
   const { handle } = await params;
-  const product = getProductByHandle(handle);
+  const product = await getProductByHandle(handle);
   if (!product) notFound();
 
-  const related = getRelatedProducts(product, 4);
+  const related = await getRelatedProducts(product, 4);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">

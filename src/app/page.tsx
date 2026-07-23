@@ -16,9 +16,9 @@ import { Reveal, MotionLink } from "@/components/motion/Reveal";
 import { getAllProducts, getFeaturedProducts } from "@/lib/catalog";
 import { CUSTOMER_LOGOS } from "@/lib/types";
 
-export default function HomePage() {
-  const featured = getFeaturedProducts(8);
-  const productCount = getAllProducts().length;
+export default async function HomePage() {
+  const featured = await getFeaturedProducts(8);
+  const productCount = (await getAllProducts()).length;
   const years = new Date().getFullYear() - 1996;
 
   const stats = [

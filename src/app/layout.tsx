@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Script from "next/script";
+import { headers } from "next/headers";
 import { DM_Sans, JetBrains_Mono, Syne } from "next/font/google";
 import { AnnouncementBar } from "@/components/AnnouncementBar";
 import { Header } from "@/components/Header";
@@ -46,30 +47,40 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
+  const isAdmin = (await headers()).get("x-orient-admin") === "1";
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body
         className={`${syne.variable} ${dmSans.variable} ${jetbrains.variable} font-sans antialiased`}
       >
-        <Script
-          id="orient-intro-gate"
-          strategy="beforeInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{var q=new URLSearchParams(location.search);if(q.get("skipIntro")==="1"){sessionStorage.setItem("orient-intro-seen","1");return;}if(sessionStorage.getItem("orient-intro-seen")!=="1"){document.documentElement.classList.add("intro-pending");}}catch(e){}})();`,
-          }}
-        />
-        <MotionRoot>
-          <CompareProvider>
-            <IntroGate>
-              <AnnouncementBar />
-              <Header />
-              <main className="min-h-[60vh] pb-24">{children}</main>
-              <Footer />
-              <CompareBar />
-            </IntroGate>
-          </CompareProvider>
-        </MotionRoot>
+        {isAdmin ? (
+          children
+        ) : (
+          <>
+            <Script
+              id="orient-intro-gate"
+              strategy="beforeInteractive"
+              dangerouslySetInnerHTML={{
+                __html: `(function(){try{var q=new URLSearchParams(location.search);if(q.get("skipIntro")==="1"){sessionStorage.setItem("orient-intro-seen","1");return;}if(sessionStorage.getItem("orient-intro-seen")!=="1"){document.documentElement.classList.add("intro-pending");}}catch(e){}})();`,
+              }}
+            />
+            <MotionRoot>
+              <CompareProvider>
+                <IntroGate>
+                  <AnnouncementBar />
+                  <Header />
+                  <main className="min-h-[60vh] pb-24">{children}</main>
+                  <Footer />
+                  <CompareBar />
+                </IntroGate>
+              </CompareProvider>
+            </MotionRoot>
+          </>
+        )}
       </body>
     </html>
   );

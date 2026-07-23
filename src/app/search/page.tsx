@@ -12,7 +12,7 @@ type Props = {
 
 export default async function SearchPage({ searchParams }: Props) {
   const { q = "" } = await searchParams;
-  const results = q ? searchProducts(q) : [];
+  const results = q ? await searchProducts(q) : [];
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">

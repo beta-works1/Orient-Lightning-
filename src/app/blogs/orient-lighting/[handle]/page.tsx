@@ -7,14 +7,14 @@ type Props = { params: Promise<{ handle: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { handle } = await params;
-  const post = getBlogPost(handle);
+  const post = await getBlogPost(handle);
   if (!post) return { title: "Article" };
   return { title: post.title, description: post.excerpt };
 }
 
 export default async function BlogPostPage({ params }: Props) {
   const { handle } = await params;
-  const post = getBlogPost(handle);
+  const post = await getBlogPost(handle);
   if (!post) notFound();
 
   return (

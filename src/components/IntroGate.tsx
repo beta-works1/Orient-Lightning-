@@ -7,6 +7,25 @@ const STORAGE_KEY = "orient-intro-seen";
 
 type Phase = "show" | "exit" | "ready";
 
+/** Nudge Framer scroll observers after intro unlocks the page. */
+function refreshScrollMotion() {
+  requestAnimationFrame(() => {
+    window.dispatchEvent(new Event("scroll"));
+    window.dispatchEvent(new Event("resize"));
+  });
+}
+
+function finishIntro(setPhase: (p: Phase) => void) {
+  try {
+    sessionStorage.setItem(STORAGE_KEY, "1");
+  } catch {
+    /* ignore */
+  }
+  document.documentElement.classList.remove("intro-pending");
+  setPhase("ready");
+  refreshScrollMotion();
+}
+
 function shouldSkipIntro() {
   try {
     if (sessionStorage.getItem(STORAGE_KEY) === "1") return true;
@@ -40,20 +59,9 @@ export function IntroGate({ children }: { children: ReactNode }) {
     setPhase("show");
 
     const exitTimer = window.setTimeout(() => setPhase("exit"), 2400);
-    const doneTimer = window.setTimeout(() => {
-      try {
-        sessionStorage.setItem(STORAGE_KEY, "1");
-      } catch {
-        /* ignore */
-      }
-      document.documentElement.classList.remove("intro-pending");
-      setPhase("ready");
-    }, 3200);
+    const doneTimer = window.setTimeout(() => finishIntro(setPhase), 3200);
 
-    const safety = window.setTimeout(() => {
-      document.documentElement.classList.remove("intro-pending");
-      setPhase("ready");
-    }, 4500);
+    const safety = window.setTimeout(() => finishIntro(setPhase), 4500);
 
     return () => {
       window.clearTimeout(exitTimer);
