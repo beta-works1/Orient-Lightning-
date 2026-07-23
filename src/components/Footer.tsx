@@ -88,7 +88,7 @@ export function Footer() {
       </div>
 
       <div className="border-t border-brand-border py-4 text-center text-xs text-brand-muted">
-        © {new Date().getFullYear()} {SITE.name}. Operated by {SITE.legalName}. Since 1996.
+        © {new Date().getFullYear()} {SITE.name}. Operated by {SITE.legalName}. Since 1996. · Powered by Beta Works
       </div>
     </footer>
   );

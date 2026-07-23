@@ -1,5 +1,7 @@
 # Orient Lighting — Next.js Rebuild
 
+Powered by Beta Works.
+
 Pixel-faithful replacement of [orientlighting.com.pk](https://orientlighting.com.pk) (Shopify → Next.js).
 
 ## Stack
