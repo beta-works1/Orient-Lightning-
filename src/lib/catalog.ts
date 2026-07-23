@@ -134,7 +134,7 @@ async function fetchPublishedProducts(): Promise<(Product & { status: "draft" | 
   return rows.map((row) => mapProduct(row, handles.get(row.id) ?? []));
 }
 
-const cachedPublishedProducts = unstable_cache(fetchPublishedProducts, ["catalog-products-v1"], {
+const cachedPublishedProducts = unstable_cache(fetchPublishedProducts, ["catalog-products-v2"], {
   revalidate: CATALOG_REVALIDATE,
   tags: ["catalog"],
 });
@@ -167,7 +167,7 @@ async function fetchAllCollections(): Promise<Collection[]> {
   }));
 }
 
-const cachedCollections = unstable_cache(fetchAllCollections, ["catalog-collections-v1"], {
+const cachedCollections = unstable_cache(fetchAllCollections, ["catalog-collections-v2"], {
   revalidate: CATALOG_REVALIDATE,
   tags: ["catalog"],
 });

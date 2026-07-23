@@ -57,19 +57,20 @@ export default async function RootLayout({
       <body
         className={`${syne.variable} ${dmSans.variable} ${jetbrains.variable} font-sans antialiased`}
       >
-        {isAdmin ? (
-          children
-        ) : (
-          <>
-            <Script
-              id="orient-intro-gate"
-              strategy="beforeInteractive"
-              dangerouslySetInnerHTML={{
-                __html: `(function(){try{var q=new URLSearchParams(location.search);if(q.get("skipIntro")==="1"){sessionStorage.setItem("orient-intro-seen","1");return;}if(sessionStorage.getItem("orient-intro-seen")!=="1"){document.documentElement.classList.add("intro-pending");}}catch(e){}})();`,
-              }}
-            />
-            <MotionRoot>
-              <CompareProvider>
+        {/* Always mounted so soft-nav between /admin and the storefront never loses context */}
+        <CompareProvider>
+          {isAdmin ? (
+            children
+          ) : (
+            <>
+              <Script
+                id="orient-intro-gate"
+                strategy="beforeInteractive"
+                dangerouslySetInnerHTML={{
+                  __html: `(function(){try{var q=new URLSearchParams(location.search);if(q.get("skipIntro")==="1"){sessionStorage.setItem("orient-intro-seen","1");return;}if(sessionStorage.getItem("orient-intro-seen")!=="1"){document.documentElement.classList.add("intro-pending");}}catch(e){}})();`,
+                }}
+              />
+              <MotionRoot>
                 <IntroGate>
                   <AnnouncementBar />
                   <Header />
@@ -77,10 +78,10 @@ export default async function RootLayout({
                   <Footer />
                   <CompareBar />
                 </IntroGate>
-              </CompareProvider>
-            </MotionRoot>
-          </>
-        )}
+              </MotionRoot>
+            </>
+          )}
+        </CompareProvider>
       </body>
     </html>
   );

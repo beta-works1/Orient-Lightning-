@@ -52,6 +52,7 @@ const SLIDES = [
 ] as const;
 
 const EASE = EASE_REVEAL;
+const CROSSFADE_MS = 1.1;
 
 function HeroTitle({ text, reduce }: { text: string; reduce: boolean | null }) {
   const words = text.split(/\s+/);
@@ -87,6 +88,7 @@ function ArrowIcon({ dir }: { dir: "left" | "right" }) {
 export function LandingHero() {
   const reduce = useReducedMotion();
   const [index, setIndex] = useState(0);
+  const fade = reduce ? 0 : CROSSFADE_MS;
 
   const go = useCallback((dir: -1 | 1) => {
     setIndex((i) => (i + dir + SLIDES.length) % SLIDES.length);
@@ -94,7 +96,7 @@ export function LandingHero() {
 
   useEffect(() => {
     if (reduce) return;
-    const id = window.setInterval(() => go(1), 6500);
+    const id = window.setInterval(() => go(1), 7000);
     return () => window.clearInterval(id);
   }, [reduce, go, index]);
 
@@ -102,39 +104,57 @@ export function LandingHero() {
 
   return (
     <section className="relative h-[100svh] min-h-[560px] max-h-[960px] overflow-hidden bg-brand-navy text-white">
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.div
-          key={slide.image}
-          className="absolute inset-0"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: reduce ? 0 : 0.5, ease: EASE }}
-        >
-          <div className={`absolute inset-0 ${reduce ? "" : "hero-ken-burns"}`}>
-            <Image
-              src={slide.image}
-              alt=""
-              fill
-              priority={index === 0}
-              sizes="100vw"
-              quality={90}
-              className="object-cover object-center"
-            />
-          </div>
-          <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/25 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/25" />
-        </motion.div>
-      </AnimatePresence>
+      {/* Crossfade stack — outgoing slide stays visible while the next fades in */}
+      <div className="absolute inset-0">
+        {SLIDES.map((s, i) => {
+          const active = i === index;
+          return (
+            <motion.div
+              key={s.image}
+              className="absolute inset-0"
+              initial={false}
+              animate={{
+                opacity: active ? 1 : 0,
+                scale: active && !reduce ? 1.04 : 1,
+              }}
+              transition={{
+                opacity: { duration: fade, ease: [0.22, 1, 0.36, 1] },
+                scale: { duration: reduce ? 0 : 7, ease: "linear" },
+              }}
+              style={{ zIndex: active ? 2 : 1, pointerEvents: active ? "auto" : "none" }}
+              aria-hidden={!active}
+            >
+              <Image
+                src={s.image}
+                alt=""
+                fill
+                priority={i === 0}
+                sizes="100vw"
+                quality={90}
+                className="object-cover object-center"
+              />
+            </motion.div>
+          );
+        })}
+        <div className="pointer-events-none absolute inset-0 z-[3] bg-gradient-to-r from-black/55 via-black/25 to-transparent" />
+        <div className="pointer-events-none absolute inset-0 z-[3] bg-gradient-to-t from-black/50 via-transparent to-black/25" />
+      </div>
 
       <div className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-end px-4 pb-28 pt-28 sm:pb-32 lg:justify-center lg:pb-28 lg:pt-20">
         <AnimatePresence mode="wait">
-          <motion.div key={slide.title} className="max-w-2xl">
+          <motion.div
+            key={slide.title}
+            className="max-w-2xl"
+            initial={reduce ? false : { opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={reduce ? undefined : { opacity: 0, y: -12 }}
+            transition={{ duration: reduce ? 0 : 0.45, ease: EASE }}
+          >
             <HeroTitle text={slide.title} reduce={reduce} />
             <motion.p
               initial={reduce ? false : { opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: reduce ? 0 : 0.4, delay: reduce ? 0 : 0.55, ease: EASE }}
+              transition={{ duration: reduce ? 0 : 0.4, delay: reduce ? 0 : 0.35, ease: EASE }}
               className="mt-5 max-w-md text-base text-white/90 sm:text-lg"
             >
               {slide.description}
@@ -142,7 +162,7 @@ export function LandingHero() {
             <motion.div
               initial={reduce ? false : { opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: reduce ? 0 : 0.35, delay: reduce ? 0 : 0.72, ease: EASE }}
+              transition={{ duration: reduce ? 0 : 0.35, delay: reduce ? 0 : 0.5, ease: EASE }}
               className="mt-8"
             >
               <MotionLink
@@ -166,7 +186,7 @@ export function LandingHero() {
                 aria-label={`Go to slide ${i + 1}`}
                 aria-current={i === index ? "true" : undefined}
                 onClick={() => setIndex(i)}
-                className={`h-0.5 rounded-full transition-all duration-150 ${
+                className={`h-0.5 rounded-full transition-all duration-500 ease-out ${
                   i === index ? "w-10 bg-white" : "w-6 bg-white/35 hover:bg-white/60"
                 }`}
               />

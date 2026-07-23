@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { ShopByCategory } from "@/components/landing/ShopByCategory";
 import { SpaceCards } from "@/components/landing/SpaceCards";
 

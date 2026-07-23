@@ -61,15 +61,28 @@ function slugify(input: string) {
     .replace(/^-|-$/g, "");
 }
 
+function toPlainText(input: string) {
+  return input
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/p>/gi, "\n\n")
+    .replace(/<\/div>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 function parseForm(formData: FormData) {
   const title = String(formData.get("title") || "").trim();
   const handle = String(formData.get("handle") || "").trim() || slugify(title);
-  const description = String(formData.get("description") || "");
+  const description = toPlainText(String(formData.get("description") || ""));
   const priceRaw = String(formData.get("price") || "").trim();
   const compareRaw = String(formData.get("compareAtPrice") || "").trim();
-  const sku = String(formData.get("sku") || "").trim();
   const productType = String(formData.get("productType") || "").trim();
-  const vendor = String(formData.get("vendor") || "Orient").trim() || "Orient";
   const status = String(formData.get("status") || "draft") === "published" ? "published" : "draft";
   const wattage = String(formData.get("wattage") || "")
     .split(",")
@@ -88,7 +101,7 @@ function parseForm(formData: FormData) {
 
   const fieldErrors: Record<string, string> = {};
   if (!title) fieldErrors.title = "Title is required.";
-  if (!handle) fieldErrors.handle = "Handle is required.";
+  if (!handle) fieldErrors.handle = "Product link is required.";
   const price = Number(priceRaw);
   if (!priceRaw || Number.isNaN(price) || price <= 0) {
     fieldErrors.price = "Price must be a positive number.";
@@ -97,7 +110,7 @@ function parseForm(formData: FormData) {
   if (compareRaw) {
     compareAtPrice = Number(compareRaw);
     if (Number.isNaN(compareAtPrice) || compareAtPrice < 0) {
-      fieldErrors.compareAtPrice = "Compare-at price must be a number.";
+      fieldErrors.compareAtPrice = "Was price must be a number.";
     }
   }
 
@@ -109,9 +122,7 @@ function parseForm(formData: FormData) {
       description,
       price,
       compareAtPrice,
-      sku,
       productType,
-      vendor,
       status: status as "draft" | "published",
       wattage,
       colorTemp,
@@ -169,9 +180,9 @@ export async function createProduct(
     description: data.description,
     price: data.price,
     compare_at_price: data.compareAtPrice,
-    sku: data.sku,
+    sku: "",
     product_type: data.productType,
-    vendor: data.vendor,
+    vendor: "Orient",
     status: data.status,
     images: data.images,
     variants: [
@@ -180,7 +191,7 @@ export async function createProduct(
         title: "Default",
         price: data.price,
         compareAtPrice: data.compareAtPrice,
-        sku: data.sku,
+        sku: "",
         available: true,
       },
     ],
@@ -188,7 +199,7 @@ export async function createProduct(
     tags: [],
     facets: { wattage: data.wattage, colorTemp: data.colorTemp },
     seo_title: data.title,
-    seo_description: data.description.replace(/<[^>]+>/g, "").slice(0, 160),
+    seo_description: data.description.slice(0, 160),
     published_at: data.status === "published" ? new Date().toISOString() : null,
     updated_at: new Date().toISOString(),
   });
@@ -233,19 +244,28 @@ export async function updateProduct(
       description: data.description,
       price: data.price,
       compare_at_price: data.compareAtPrice,
-      sku: data.sku,
       product_type: data.productType,
-      vendor: data.vendor,
+      vendor: "Orient",
       status: data.status,
       images: data.images,
+      variants: [
+        {
+          id: `${id}_v0`,
+          title: "Default",
+          price: data.price,
+          compareAtPrice: data.compareAtPrice,
+          sku: current.sku || "",
+          available: true,
+        },
+      ],
       options,
       facets: { wattage: data.wattage, colorTemp: data.colorTemp },
       seo_title: data.title,
-      seo_description: data.description.replace(/<[^>]+>/g, "").slice(0, 160),
+      seo_description: data.description.slice(0, 160),
       published_at:
         data.status === "published"
           ? current.published_at ?? new Date().toISOString()
-          : current.published_at,
+          : null,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id);
@@ -286,22 +306,31 @@ export async function uploadProductImage(
   if (!(file instanceof File) || file.size === 0) {
     return { error: "Choose an image file." };
   }
-  if (!file.type.startsWith("image/")) {
-    return { error: "Only image files are allowed." };
+
+  const allowed = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"]);
+  if (!allowed.has(file.type)) {
+    return { error: "Only JPG, PNG, WebP, GIF, or AVIF images are allowed." };
   }
   if (file.size > 5 * 1024 * 1024) {
     return { error: "Image must be under 5MB." };
   }
 
-  const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-  const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+  const extByType: Record<string, string> = {
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/webp": "webp",
+    "image/gif": "gif",
+    "image/avif": "avif",
+  };
+  const ext = extByType[file.type] || "jpg";
+  const path = `uploads/${Date.now()}-${crypto.randomUUID()}.${ext}`;
   const sb = createServiceClient();
   const buffer = Buffer.from(await file.arrayBuffer());
   const { error } = await sb.storage.from("product-images").upload(path, buffer, {
     contentType: file.type,
     upsert: false,
   });
-  if (error) return { error: error.message };
+  if (error) return { error: "Upload failed. Try again." };
 
   const { data } = sb.storage.from("product-images").getPublicUrl(path);
   return { url: data.publicUrl };

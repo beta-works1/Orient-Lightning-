@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useActionState, useState } from "react";
 import {
   createProduct,
@@ -7,6 +8,7 @@ import {
   uploadProductImage,
   type ProductFormState,
 } from "@/app/admin/actions";
+import { InlineSpinner } from "@/components/admin/AnimatedLoader";
 
 type CollectionOption = { handle: string; title: string };
 
@@ -20,9 +22,7 @@ type Props = {
     description: string;
     price: number;
     compareAtPrice: number | null;
-    sku: string;
     productType: string;
-    vendor: string;
     status: "draft" | "published";
     wattage: string;
     colorTemp: string;
@@ -34,7 +34,23 @@ type Props = {
 
 const empty: ProductFormState = {};
 const inputClass =
-  "w-full rounded-md border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-900";
+  "w-full rounded-md border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-[#0F428F]";
+
+/** Show plain text in the admin editor (strip leftover HTML from old imports). */
+function toPlainDescription(value: string) {
+  return value
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/p>/gi, "\n\n")
+    .replace(/<\/div>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
 
 export function ProductForm({ mode, productId, collections, initial }: Props) {
   const action =
@@ -43,27 +59,42 @@ export function ProductForm({ mode, productId, collections, initial }: Props) {
       : (prev: ProductFormState, fd: FormData) => updateProduct(productId!, prev, fd);
 
   const [state, formAction, pending] = useActionState(action, empty);
-  const [images, setImages] = useState((initial?.images || []).join("\n"));
+  const [imageList, setImageList] = useState<string[]>(initial?.images || []);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
-  async function onUpload(file: File | null) {
-    if (!file) return;
+  async function onUpload(fileList: FileList | null) {
+    if (!fileList?.length) return;
     setUploading(true);
     setUploadError(null);
-    const fd = new FormData();
-    fd.set("file", file);
-    const res = await uploadProductImage(fd);
-    setUploading(false);
-    if (res.error || !res.url) {
-      setUploadError(res.error || "Upload failed");
-      return;
+
+    const uploaded: string[] = [];
+    for (const file of Array.from(fileList)) {
+      const fd = new FormData();
+      fd.set("file", file);
+      const res = await uploadProductImage(fd);
+      if (res.error || !res.url) {
+        setUploadError(res.error || "Upload failed");
+        break;
+      }
+      uploaded.push(res.url);
     }
-    setImages((prev) => (prev.trim() ? `${prev.trim()}\n${res.url}` : res.url!));
+
+    if (uploaded.length) {
+      setImageList((prev) => [...prev, ...uploaded]);
+    }
+    setUploading(false);
+  }
+
+  function removeImage(url: string) {
+    setImageList((prev) => prev.filter((u) => u !== url));
   }
 
   return (
-    <form action={formAction} className="space-y-5 rounded-xl border border-slate-200 bg-white p-4 sm:p-6">
+    <form
+      action={formAction}
+      className="space-y-5 rounded-xl border border-white/40 bg-white/95 p-4 shadow-xl shadow-black/10 backdrop-blur-sm sm:p-6"
+    >
       {state.error ? (
         <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>
       ) : null}
@@ -77,21 +108,28 @@ export function ProductForm({ mode, productId, collections, initial }: Props) {
       </label>
 
       <label className="block text-sm">
-        <span className="mb-1 block font-medium text-slate-700">Handle (URL slug)</span>
+        <span className="mb-1 block font-medium text-slate-700">Product link</span>
         <input
           name="handle"
           defaultValue={initial?.handle}
           className={inputClass}
-          placeholder="auto from title if empty"
+          placeholder="Leave blank to create from title"
         />
+        <span className="mt-1 block text-xs text-slate-500">Used in the product page URL</span>
         {state.fieldErrors?.handle ? (
           <span className="mt-1 block text-xs text-red-600">{state.fieldErrors.handle}</span>
         ) : null}
       </label>
 
       <label className="block text-sm">
-        <span className="mb-1 block font-medium text-slate-700">Description (HTML ok)</span>
-        <textarea name="description" rows={6} defaultValue={initial?.description} className={inputClass} />
+        <span className="mb-1 block font-medium text-slate-700">Description</span>
+        <textarea
+          name="description"
+          rows={6}
+          defaultValue={toPlainDescription(initial?.description || "")}
+          className={inputClass}
+          placeholder="Write a short product description…"
+        />
       </label>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -111,7 +149,7 @@ export function ProductForm({ mode, productId, collections, initial }: Props) {
           ) : null}
         </label>
         <label className="block text-sm">
-          <span className="mb-1 block font-medium text-slate-700">Compare-at price</span>
+          <span className="mb-1 block font-medium text-slate-700">Was price (optional)</span>
           <input
             name="compareAtPrice"
             type="number"
@@ -119,76 +157,96 @@ export function ProductForm({ mode, productId, collections, initial }: Props) {
             min="0"
             defaultValue={initial?.compareAtPrice ?? ""}
             className={inputClass}
-          />
-        </label>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <label className="block text-sm">
-          <span className="mb-1 block font-medium text-slate-700">SKU</span>
-          <input name="sku" defaultValue={initial?.sku} className={inputClass} />
-        </label>
-        <label className="block text-sm">
-          <span className="mb-1 block font-medium text-slate-700">Type</span>
-          <input
-            name="productType"
-            defaultValue={initial?.productType}
-            className={inputClass}
-            placeholder="Street Light"
+            placeholder="Shown crossed out when higher"
           />
         </label>
       </div>
 
       <label className="block text-sm">
-        <span className="mb-1 block font-medium text-slate-700">Vendor</span>
-        <input name="vendor" defaultValue={initial?.vendor || "Orient"} className={inputClass} />
+        <span className="mb-1 block font-medium text-slate-700">Product type</span>
+        <input
+          name="productType"
+          defaultValue={initial?.productType}
+          className={inputClass}
+          placeholder="e.g. Street Light, Bulb, Panel"
+        />
       </label>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="block text-sm">
-          <span className="mb-1 block font-medium text-slate-700">Wattage (comma-separated)</span>
-          <input name="wattage" defaultValue={initial?.wattage} className={inputClass} placeholder="12, 18" />
+          <span className="mb-1 block font-medium text-slate-700">Wattage</span>
+          <input name="wattage" defaultValue={initial?.wattage} className={inputClass} placeholder="e.g. 12, 18" />
         </label>
         <label className="block text-sm">
-          <span className="mb-1 block font-medium text-slate-700">Color temp (comma-separated)</span>
+          <span className="mb-1 block font-medium text-slate-700">Color temperature</span>
           <input
             name="colorTemp"
             defaultValue={initial?.colorTemp}
             className={inputClass}
-            placeholder="3000, 6500"
+            placeholder="e.g. 3000, 6500"
           />
         </label>
       </div>
 
       <label className="block text-sm">
-        <span className="mb-1 block font-medium text-slate-700">Options (comma-separated)</span>
-        <input name="options" defaultValue={initial?.options} className={inputClass} />
-      </label>
-
-      <label className="block text-sm">
-        <span className="mb-1 block font-medium text-slate-700">Images (one URL per line)</span>
-        <textarea
-          name="images"
-          rows={4}
-          value={images}
-          onChange={(e) => setImages(e.target.value)}
-          className={`${inputClass} font-mono text-xs`}
+        <span className="mb-1 block font-medium text-slate-700">Options (optional)</span>
+        <input
+          name="options"
+          defaultValue={initial?.options}
+          className={inputClass}
+          placeholder="e.g. Round, Square"
         />
       </label>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-slate-700">
-          Upload image to Supabase Storage
+        <span className="mb-2 block text-sm font-medium text-slate-700">Images</span>
+        <input type="hidden" name="images" value={imageList.join("\n")} />
+
+        {imageList.length ? (
+          <ul className="mb-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {imageList.map((url) => (
+              <li
+                key={url}
+                className="relative overflow-hidden rounded-lg border border-slate-200 bg-slate-50"
+              >
+                <div className="relative aspect-square">
+                  <Image src={url} alt="" fill className="object-contain p-2" sizes="160px" />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => removeImage(url)}
+                  className="absolute right-1 top-1 rounded bg-white/95 px-2 py-1 text-xs font-medium text-red-700 shadow hover:bg-red-50"
+                >
+                  Remove
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mb-3 text-xs text-slate-500">No images yet.</p>
+        )}
+
+        <label className="block text-sm">
+          <span className="mb-1 block font-medium text-slate-700">Upload image</span>
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            disabled={uploading}
+            onChange={(e) => {
+              void onUpload(e.target.files);
+              e.target.value = "";
+            }}
+            className="block w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-[#0F428F] file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-[#162950]"
+          />
         </label>
-        <input
-          type="file"
-          accept="image/*"
-          disabled={uploading}
-          onChange={(e) => onUpload(e.target.files?.[0] || null)}
-          className="block w-full text-sm"
-        />
-        {uploading ? <p className="mt-1 text-xs text-slate-500">Uploading…</p> : null}
-        {uploadError ? <p className="mt-1 text-xs text-red-600">{uploadError}</p> : null}
+        {uploading ? (
+          <p className="mt-2 inline-flex items-center gap-2 text-xs text-slate-500">
+            <InlineSpinner className="text-[#0F428F]" />
+            Uploading…
+          </p>
+        ) : null}
+        {uploadError ? <p className="mt-2 text-xs text-red-600">{uploadError}</p> : null}
       </div>
 
       <fieldset>
@@ -218,10 +276,19 @@ export function ProductForm({ mode, productId, collections, initial }: Props) {
 
       <button
         type="submit"
-        disabled={pending}
-        className="flex min-h-[44px] w-full items-center justify-center rounded-md bg-blue-900 px-4 text-sm font-semibold text-white hover:bg-blue-950 disabled:opacity-60 sm:w-auto"
+        disabled={pending || uploading}
+        className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-md bg-[#0F428F] px-4 text-sm font-semibold text-white hover:bg-[#162950] disabled:opacity-60 sm:w-auto"
       >
-        {pending ? "Saving…" : mode === "create" ? "Create product" : "Save changes"}
+        {pending ? (
+          <>
+            <InlineSpinner className="text-white" />
+            Saving…
+          </>
+        ) : mode === "create" ? (
+          "Create product"
+        ) : (
+          "Save changes"
+        )}
       </button>
     </form>
   );

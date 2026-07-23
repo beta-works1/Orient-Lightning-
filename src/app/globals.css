@@ -582,3 +582,9 @@ html.intro-pending {
     transition: none;
   }
 }
+
+@keyframes admin-orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}

@@ -18,13 +18,18 @@ export default async function EditProductPage({ params, searchParams }: Props) {
   return (
     <div>
       <div className="mb-4 flex items-center gap-3">
-        <Link href="/admin/products" className="text-sm text-slate-500 hover:text-slate-800">
+        <Link
+          href="/admin/products"
+          className="rounded-md bg-white/90 px-2 py-1 text-sm text-slate-600 shadow-sm hover:text-slate-900"
+        >
           ← Products
         </Link>
       </div>
-      <h1 className="mb-2 text-2xl font-bold">Edit product</h1>
+      <h1 className="mb-2 text-2xl font-bold text-white drop-shadow">Edit product</h1>
       {sp.saved ? (
-        <p className="mb-4 rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-800">Saved.</p>
+        <p className="mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+          Saved.
+        </p>
       ) : null}
       <ProductForm
         mode="edit"
@@ -36,9 +41,7 @@ export default async function EditProductPage({ params, searchParams }: Props) {
           description: product.description,
           price: product.price,
           compareAtPrice: product.compareAtPrice,
-          sku: product.sku,
           productType: product.productType || "",
-          vendor: product.vendor || "Orient",
           status: (product.status as "draft" | "published") || "published",
           wattage: (product.facets?.wattage || []).join(", "),
           colorTemp: (product.facets?.colorTemp || []).join(", "),

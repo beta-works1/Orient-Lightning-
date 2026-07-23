@@ -1,6 +1,48 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
+/** Only allow same-origin relative /admin paths (blocks open redirects). */
+function safeAdminPath(raw: string | null | undefined, fallback = "/admin/products"): string {
+  if (!raw) return fallback;
+  if (!raw.startsWith("/admin")) return fallback;
+  if (
+    raw.startsWith("//") ||
+    raw.includes("://") ||
+    raw.includes("\\") ||
+    raw.includes("@") ||
+    raw.includes("..")
+  ) {
+    return fallback;
+  }
+  return raw.split("#")[0];
+}
+
+function withAdminSecurityHeaders(res: NextResponse) {
+  res.headers.set("X-Frame-Options", "DENY");
+  res.headers.set("X-Content-Type-Options", "nosniff");
+  res.headers.set("Referrer-Policy", "no-referrer");
+  res.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  res.headers.set("Cache-Control", "no-store, max-age=0");
+  if (process.env.NODE_ENV === "production") {
+    res.headers.set(
+      "Content-Security-Policy",
+      [
+        "default-src 'self'",
+        "base-uri 'self'",
+        "form-action 'self'",
+        "frame-ancestors 'none'",
+        "object-src 'none'",
+        "img-src 'self' data: blob: https://*.supabase.co",
+        "font-src 'self' data:",
+        "style-src 'self' 'unsafe-inline'",
+        "script-src 'self' 'unsafe-inline'",
+        "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
+      ].join("; "),
+    );
+  }
+  return res;
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -11,43 +53,48 @@ export async function middleware(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-orient-admin", "1");
 
+  const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  const { supabase, supabaseResponse, user } = await updateSession(request);
+
+  const copyCookies = (res: NextResponse) => {
+    supabaseResponse.cookies.getAll().forEach((c) => res.cookies.set(c));
+    return withAdminSecurityHeaders(res);
+  };
+
   if (pathname === "/admin/login") {
-    const { supabaseResponse, user } = await updateSession(request);
-    const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
     if (user && adminEmail && user.email?.toLowerCase() === adminEmail) {
       const url = request.nextUrl.clone();
       url.pathname = "/admin/products";
-      return NextResponse.redirect(url);
+      url.search = "";
+      return copyCookies(NextResponse.redirect(url));
     }
-    const res = NextResponse.next({
-      request: { headers: requestHeaders },
-    });
-    supabaseResponse.cookies.getAll().forEach((c) => res.cookies.set(c));
-    return res;
+    // Non-allowlisted session must not linger on admin login
+    if (user && (!adminEmail || user.email?.toLowerCase() !== adminEmail)) {
+      await supabase.auth.signOut();
+    }
+    const res = NextResponse.next({ request: { headers: requestHeaders } });
+    return copyCookies(res);
   }
-
-  const { supabaseResponse, user } = await updateSession(request);
-  const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
 
   if (!user) {
     const url = request.nextUrl.clone();
     url.pathname = "/admin/login";
-    url.searchParams.set("next", pathname);
-    return NextResponse.redirect(url);
+    url.search = "";
+    url.searchParams.set("next", safeAdminPath(pathname));
+    return copyCookies(NextResponse.redirect(url));
   }
 
   if (!adminEmail || user.email?.toLowerCase() !== adminEmail) {
+    await supabase.auth.signOut();
     const url = request.nextUrl.clone();
     url.pathname = "/admin/login";
+    url.search = "";
     url.searchParams.set("error", "unauthorized");
-    return NextResponse.redirect(url);
+    return copyCookies(NextResponse.redirect(url));
   }
 
-  const res = NextResponse.next({
-    request: { headers: requestHeaders },
-  });
-  supabaseResponse.cookies.getAll().forEach((c) => res.cookies.set(c));
-  return res;
+  const res = NextResponse.next({ request: { headers: requestHeaders } });
+  return copyCookies(res);
 }
 
 export const config = {
