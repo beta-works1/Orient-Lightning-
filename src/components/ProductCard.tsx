@@ -61,6 +61,7 @@ export function ProductCard({
                 alt={product.title}
                 fill
                 sizes="(max-width:768px) 50vw, 25vw"
+                quality={65}
                 className={`object-contain p-3 transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                   secondary
                     ? "group-hover:opacity-0 group-focus-within:opacity-0"
@@ -73,6 +74,8 @@ export function ProductCard({
                   alt=""
                   fill
                   sizes="(max-width:768px) 50vw, 25vw"
+                  quality={65}
+                  loading="lazy"
                   className="absolute inset-0 object-contain p-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-within:opacity-100"
                   aria-hidden
                 />

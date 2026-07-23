@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/admin";
@@ -20,17 +20,19 @@ async function requireAdmin() {
   assertAdminEmail(user?.email);
 
   const sb = createServiceClient();
-  const { data: allowlist, error } = await sb.from("admin_users").select("email");
+  const { data: row, error } = await sb
+    .from("admin_users")
+    .select("email")
+    .ilike("email", user!.email!)
+    .maybeSingle();
   if (error) throw new Error(`admin allowlist: ${error.message}`);
-  const ok = (allowlist || []).some(
-    (r) => r.email.toLowerCase() === user!.email!.toLowerCase(),
-  );
-  if (!ok) throw new Error("Unauthorized");
+  if (!row) throw new Error("Unauthorized");
 
   return user!;
 }
 
 function revalidateCatalog(handles: string[], collectionHandles: string[]) {
+  revalidateTag("catalog");
   revalidatePath("/");
   revalidatePath("/search");
   revalidatePath("/compare");

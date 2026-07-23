@@ -58,10 +58,10 @@ export function IntroGate({ children }: { children: ReactNode }) {
     document.documentElement.classList.add("intro-pending");
     setPhase("show");
 
-    const exitTimer = window.setTimeout(() => setPhase("exit"), 2400);
-    const doneTimer = window.setTimeout(() => finishIntro(setPhase), 3200);
+    const exitTimer = window.setTimeout(() => setPhase("exit"), 1400);
+    const doneTimer = window.setTimeout(() => finishIntro(setPhase), 2000);
 
-    const safety = window.setTimeout(() => finishIntro(setPhase), 4500);
+    const safety = window.setTimeout(() => finishIntro(setPhase), 2800);
 
     return () => {
       window.clearTimeout(exitTimer);

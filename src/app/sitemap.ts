@@ -7,7 +7,7 @@ import {
 } from "@/lib/catalog";
 import { SITE_URL } from "@/lib/types";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 const STATIC_PAGE_HANDLES = [
   "become-our-partner",

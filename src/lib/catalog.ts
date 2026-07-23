@@ -1,3 +1,5 @@
+import { cache } from "react";
+import { unstable_cache } from "next/cache";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { BlogPost, Collection, Product, StaticPage } from "./types";
 
@@ -22,27 +24,42 @@ type ProductRow = {
   published_at: string | null;
 };
 
+const PRODUCT_SELECT =
+  "id, handle, title, description, price, compare_at_price, sku, product_type, vendor, status, images, variants, options, tags, facets, seo_title, seo_description, published_at";
+
+const LIST_SELECT =
+  "id, handle, title, description, price, compare_at_price, sku, product_type, vendor, status, images, tags, facets, seo_title, seo_description, published_at";
+
+const CATALOG_REVALIDATE = 120;
+
+let _public: SupabaseClient | null = null;
+let _service: SupabaseClient | null = null;
+
 function publicClient(): SupabaseClient {
+  if (_public) return _public;
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) {
     throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY");
   }
-  return createClient(url, key, {
+  _public = createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
+  return _public;
 }
 
 /** Server-only — bypasses RLS for admin catalog reads (drafts). */
 function serviceClient(): SupabaseClient {
+  if (_service) return _service;
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) {
     throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
   }
-  return createClient(url, key, {
+  _service = createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
+  return _service;
 }
 
 function num(v: string | number | null | undefined): number {
@@ -50,7 +67,10 @@ function num(v: string | number | null | undefined): number {
   return typeof v === "number" ? v : Number(v);
 }
 
-function mapProduct(row: ProductRow, collectionHandles: string[]): Product & { status: "draft" | "published" } {
+function mapProduct(
+  row: ProductRow,
+  collectionHandles: string[],
+): Product & { status: "draft" | "published" } {
   return {
     id: row.id,
     handle: row.handle,
@@ -98,14 +118,12 @@ async function handlesByProductId(
   return map;
 }
 
-export async function getAllProducts(opts?: {
-  includeDrafts?: boolean;
-}): Promise<(Product & { status: "draft" | "published" })[]> {
-  const sb = opts?.includeDrafts ? serviceClient() : publicClient();
-  let query = sb.from("products").select("*");
-  if (!opts?.includeDrafts) query = query.eq("status", "published");
-
-  const { data, error } = await query;
+async function fetchPublishedProducts(): Promise<(Product & { status: "draft" | "published" })[]> {
+  const sb = publicClient();
+  const { data, error } = await sb
+    .from("products")
+    .select(PRODUCT_SELECT)
+    .eq("status", "published");
   if (error) throw new Error(`getAllProducts: ${error.message}`);
 
   const rows = (data || []) as ProductRow[];
@@ -116,43 +134,18 @@ export async function getAllProducts(opts?: {
   return rows.map((row) => mapProduct(row, handles.get(row.id) ?? []));
 }
 
-export async function getProductByHandle(
-  handle: string,
-  opts?: { includeDrafts?: boolean },
-): Promise<(Product & { status: "draft" | "published" }) | undefined> {
-  const sb = opts?.includeDrafts ? serviceClient() : publicClient();
-  let query = sb.from("products").select("*").eq("handle", handle);
-  if (!opts?.includeDrafts) query = query.eq("status", "published");
+const cachedPublishedProducts = unstable_cache(fetchPublishedProducts, ["catalog-products-v1"], {
+  revalidate: CATALOG_REVALIDATE,
+  tags: ["catalog"],
+});
 
-  const { data, error } = await query.maybeSingle();
-  if (error) throw new Error(`getProductByHandle: ${error.message}`);
-  if (!data) return undefined;
-
-  const row = data as ProductRow;
-  const handles = await handlesByProductId(sb, [row.id]);
-  return mapProduct(row, handles.get(row.id) ?? []);
-}
-
-export async function getProductById(
-  id: string,
-): Promise<(Product & { status: "draft" | "published" }) | undefined> {
-  const sb = serviceClient();
-  const { data, error } = await sb.from("products").select("*").eq("id", id).maybeSingle();
-  if (error) throw new Error(`getProductById: ${error.message}`);
-  if (!data) return undefined;
-  const row = data as ProductRow;
-  const handles = await handlesByProductId(sb, [row.id]);
-  return mapProduct(row, handles.get(row.id) ?? []);
-}
-
-export async function getAllCollections(): Promise<Collection[]> {
+async function fetchAllCollections(): Promise<Collection[]> {
   const sb = publicClient();
-  const { data: cols, error } = await sb.from("collections").select("*");
+  const [{ data: cols, error }, { data: links, error: linkErr }] = await Promise.all([
+    sb.from("collections").select("id, handle, title, description, image"),
+    sb.from("product_collections").select("collection_id, products!inner(handle, status)"),
+  ]);
   if (error) throw new Error(`getAllCollections: ${error.message}`);
-
-  const { data: links, error: linkErr } = await sb
-    .from("product_collections")
-    .select("collection_id, products!inner(handle, status)");
   if (linkErr) throw new Error(`getAllCollections joins: ${linkErr.message}`);
 
   const byCol = new Map<string, string[]>();
@@ -174,20 +167,140 @@ export async function getAllCollections(): Promise<Collection[]> {
   }));
 }
 
-export async function getCollectionByHandle(
-  handle: string,
-): Promise<Collection | undefined> {
-  const all = await getAllCollections();
-  return all.find((c) => c.handle === handle);
+const cachedCollections = unstable_cache(fetchAllCollections, ["catalog-collections-v1"], {
+  revalidate: CATALOG_REVALIDATE,
+  tags: ["catalog"],
+});
+
+/** Request-deduped published catalog (also cross-request cached). */
+export const getAllProducts = cache(async (opts?: { includeDrafts?: boolean }) => {
+  if (opts?.includeDrafts) {
+    const sb = serviceClient();
+    const { data, error } = await sb.from("products").select(PRODUCT_SELECT);
+    if (error) throw new Error(`getAllProducts: ${error.message}`);
+    const rows = (data || []) as ProductRow[];
+    const handles = await handlesByProductId(
+      sb,
+      rows.map((r) => r.id),
+    );
+    return rows.map((row) => mapProduct(row, handles.get(row.id) ?? []));
+  }
+  return cachedPublishedProducts();
+});
+
+export const getPublishedProductCount = cache(async (): Promise<number> => {
+  const sb = publicClient();
+  const { count, error } = await sb
+    .from("products")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "published");
+  if (error) throw new Error(`getPublishedProductCount: ${error.message}`);
+  return count ?? 0;
+});
+
+export const getProductByHandle = cache(
+  async (
+    handle: string,
+    opts?: { includeDrafts?: boolean },
+  ): Promise<(Product & { status: "draft" | "published" }) | undefined> => {
+    const sb = opts?.includeDrafts ? serviceClient() : publicClient();
+    let query = sb.from("products").select(PRODUCT_SELECT).eq("handle", handle);
+    if (!opts?.includeDrafts) query = query.eq("status", "published");
+
+    const { data, error } = await query.maybeSingle();
+    if (error) throw new Error(`getProductByHandle: ${error.message}`);
+    if (!data) return undefined;
+
+    const row = data as ProductRow;
+    const handles = await handlesByProductId(sb, [row.id]);
+    return mapProduct(row, handles.get(row.id) ?? []);
+  },
+);
+
+export async function getProductById(
+  id: string,
+): Promise<(Product & { status: "draft" | "published" }) | undefined> {
+  const sb = serviceClient();
+  const { data, error } = await sb
+    .from("products")
+    .select(PRODUCT_SELECT)
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw new Error(`getProductById: ${error.message}`);
+  if (!data) return undefined;
+  const row = data as ProductRow;
+  const handles = await handlesByProductId(sb, [row.id]);
+  return mapProduct(row, handles.get(row.id) ?? []);
 }
 
-export async function getProductsForCollection(handle: string): Promise<Product[]> {
-  const collection = await getCollectionByHandle(handle);
-  if (!collection) return [];
-  const set = new Set(collection.productHandles);
-  const all = await getAllProducts();
-  return all.filter((p) => set.has(p.handle) || p.collectionIds.includes(handle));
-}
+export const getAllCollections = cache(async () => cachedCollections());
+
+export const getCollectionByHandle = cache(
+  async (handle: string): Promise<Collection | undefined> => {
+    const sb = publicClient();
+    const { data: col, error } = await sb
+      .from("collections")
+      .select("id, handle, title, description, image")
+      .eq("handle", handle)
+      .maybeSingle();
+    if (error) throw new Error(`getCollectionByHandle: ${error.message}`);
+    if (!col) return undefined;
+
+    const { data: links, error: linkErr } = await sb
+      .from("product_collections")
+      .select("products!inner(handle, status)")
+      .eq("collection_id", col.id);
+    if (linkErr) throw new Error(`getCollectionByHandle joins: ${linkErr.message}`);
+
+    const productHandles: string[] = [];
+    for (const row of links || []) {
+      const product = (row as { products?: { handle?: string; status?: string } }).products;
+      if (product?.handle && product.status === "published") {
+        productHandles.push(product.handle);
+      }
+    }
+
+    return {
+      id: col.id,
+      handle: col.handle,
+      title: col.title,
+      description: col.description ?? "",
+      image: col.image,
+      productHandles,
+    };
+  },
+);
+
+export const getProductsForCollection = cache(async (handle: string): Promise<Product[]> => {
+  const sb = publicClient();
+  const { data: col, error: colErr } = await sb
+    .from("collections")
+    .select("id")
+    .eq("handle", handle)
+    .maybeSingle();
+  if (colErr) throw new Error(`getProductsForCollection: ${colErr.message}`);
+  if (!col) return [];
+
+  const { data: links, error } = await sb
+    .from("product_collections")
+    .select(`products!inner(${LIST_SELECT})`)
+    .eq("collection_id", col.id)
+    .eq("products.status", "published");
+  if (error) throw new Error(`getProductsForCollection products: ${error.message}`);
+
+  const rows: ProductRow[] = [];
+  for (const row of links || []) {
+    const raw = (row as unknown as { products?: ProductRow | ProductRow[] | null }).products;
+    const product = Array.isArray(raw) ? raw[0] : raw;
+    if (product) rows.push(product);
+  }
+
+  const handles = await handlesByProductId(
+    sb,
+    rows.map((r) => r.id),
+  );
+  return rows.map((row) => mapProduct(row, handles.get(row.id) ?? []));
+});
 
 export async function getFeaturedProducts(limit = 8): Promise<Product[]> {
   const best = await getProductsForCollection("best-sellers");
@@ -204,31 +317,53 @@ export async function getDailyDealProducts(limit = 6): Promise<Product[]> {
 }
 
 export async function getRelatedProducts(product: Product, limit = 4): Promise<Product[]> {
-  const all = await getAllProducts();
-  const related = all.filter(
-    (p) =>
-      p.handle !== product.handle &&
-      p.collectionIds.some((id) => product.collectionIds.includes(id)),
+  if (!product.collectionIds.length) {
+    return (await getAllProducts())
+      .filter((p) => p.handle !== product.handle)
+      .slice(0, limit);
+  }
+
+  const pools = await Promise.all(
+    product.collectionIds.slice(0, 3).map((h) => getProductsForCollection(h)),
   );
-  return (related.length ? related : all.filter((p) => p.handle !== product.handle)).slice(
-    0,
-    limit,
-  );
+  const seen = new Set<string>([product.handle]);
+  const related: Product[] = [];
+  for (const list of pools) {
+    for (const p of list) {
+      if (seen.has(p.handle)) continue;
+      seen.add(p.handle);
+      related.push(p);
+      if (related.length >= limit) return related;
+    }
+  }
+  if (related.length >= limit) return related;
+
+  for (const p of await getAllProducts()) {
+    if (seen.has(p.handle)) continue;
+    related.push(p);
+    if (related.length >= limit) break;
+  }
+  return related;
 }
 
 export async function searchProducts(query: string): Promise<Product[]> {
   const q = query.trim().toLowerCase();
   if (!q) return [];
+  // Catalog is small — filter the cached list (avoids a cold Supabase round-trip).
   const all = await getAllProducts();
-  return all.filter((p) => {
-    const hay = [p.title, p.description, p.sku, ...(p.tags || [])].join(" ").toLowerCase();
-    return hay.includes(q);
-  });
+  return all
+    .filter((p) => {
+      const hay = [p.title, p.description, p.sku, ...(p.tags || [])].join(" ").toLowerCase();
+      return hay.includes(q);
+    })
+    .slice(0, 48);
 }
 
-export async function getBlogPosts(): Promise<BlogPost[]> {
+export const getBlogPosts = cache(async (): Promise<BlogPost[]> => {
   const sb = publicClient();
-  const { data, error } = await sb.from("blog_posts").select("*");
+  const { data, error } = await sb
+    .from("blog_posts")
+    .select("id, handle, title, excerpt, body, published_at, image");
   if (error) throw new Error(`getBlogPosts: ${error.message}`);
   return (data || []).map((r) => ({
     id: r.id,
@@ -239,11 +374,15 @@ export async function getBlogPosts(): Promise<BlogPost[]> {
     publishedAt: r.published_at,
     image: r.image,
   }));
-}
+});
 
-export async function getBlogPost(handle: string): Promise<BlogPost | undefined> {
+export const getBlogPost = cache(async (handle: string): Promise<BlogPost | undefined> => {
   const sb = publicClient();
-  const { data, error } = await sb.from("blog_posts").select("*").eq("handle", handle).maybeSingle();
+  const { data, error } = await sb
+    .from("blog_posts")
+    .select("id, handle, title, excerpt, body, published_at, image")
+    .eq("handle", handle)
+    .maybeSingle();
   if (error) throw new Error(`getBlogPost: ${error.message}`);
   if (!data) return undefined;
   return {
@@ -255,15 +394,19 @@ export async function getBlogPost(handle: string): Promise<BlogPost | undefined>
     publishedAt: data.published_at,
     image: data.image,
   };
-}
+});
 
-export async function getPage(handle: string): Promise<StaticPage | undefined> {
+export const getPage = cache(async (handle: string): Promise<StaticPage | undefined> => {
   const sb = publicClient();
-  const { data, error } = await sb.from("pages").select("*").eq("handle", handle).maybeSingle();
+  const { data, error } = await sb
+    .from("pages")
+    .select("id, handle, title, body")
+    .eq("handle", handle)
+    .maybeSingle();
   if (error) throw new Error(`getPage: ${error.message}`);
   if (!data) return undefined;
   return { id: data.id, handle: data.handle, title: data.title, body: data.body ?? "" };
-}
+});
 
 export function filterProducts(
   listIn: Product[],

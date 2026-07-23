@@ -1,3 +1,4 @@
+import dynamic from "next/dynamic";
 import { LandingHero } from "@/components/landing/LandingHero";
 import { LandingCategories } from "@/components/landing/LandingCategories";
 import {
@@ -5,20 +6,37 @@ import {
   LandingConfidence,
   LandingSmart,
 } from "@/components/landing/LandingSections";
-import { LandingFlagships } from "@/components/landing/LandingFlagships";
 import { FindYourFit } from "@/components/landing/FindYourFit";
-import { AnimatedStats } from "@/components/landing/AnimatedStats";
-import { CustomerLogos, Testimonials, TrustBadges } from "@/components/HomeSections";
 import { ProductRail } from "@/components/ProductRail";
 import { FindAStoreCta } from "@/components/stores/FindAStoreCta";
-import { OrientLampSection } from "@/components/landing/OrientLampSection";
 import { Reveal, MotionLink } from "@/components/motion/Reveal";
-import { getAllProducts, getFeaturedProducts } from "@/lib/catalog";
+import { getFeaturedProducts, getPublishedProductCount } from "@/lib/catalog";
 import { CUSTOMER_LOGOS } from "@/lib/types";
 
+const LandingFlagships = dynamic(() =>
+  import("@/components/landing/LandingFlagships").then((m) => m.LandingFlagships),
+);
+const OrientLampSection = dynamic(() =>
+  import("@/components/landing/OrientLampSection").then((m) => m.OrientLampSection),
+);
+const AnimatedStats = dynamic(() =>
+  import("@/components/landing/AnimatedStats").then((m) => m.AnimatedStats),
+);
+const Testimonials = dynamic(() =>
+  import("@/components/HomeSections").then((m) => m.Testimonials),
+);
+const CustomerLogos = dynamic(() =>
+  import("@/components/HomeSections").then((m) => m.CustomerLogos),
+);
+const TrustBadges = dynamic(() =>
+  import("@/components/HomeSections").then((m) => m.TrustBadges),
+);
+
 export default async function HomePage() {
-  const featured = await getFeaturedProducts(8);
-  const productCount = (await getAllProducts()).length;
+  const [featured, productCount] = await Promise.all([
+    getFeaturedProducts(8),
+    getPublishedProductCount(),
+  ]);
   const years = new Date().getFullYear() - 1996;
 
   const stats = [

@@ -67,12 +67,11 @@ const NAV_MENUS = [
 function NavUnderlineLink({
   href,
   children,
-  reduce,
   overlay,
 }: {
   href: string;
   children: React.ReactNode;
-  reduce: boolean | null;
+  reduce?: boolean | null;
   overlay: boolean;
 }) {
   return (
@@ -264,6 +263,9 @@ export function Header() {
               <NavUnderlineLink href="/stores" reduce={reduce} overlay={overlay}>
                 Stores
               </NavUnderlineLink>
+              <NavUnderlineLink href="/admin/login" reduce={reduce} overlay={overlay}>
+                Admin
+              </NavUnderlineLink>
             </nav>
 
             <div
@@ -323,6 +325,9 @@ export function Header() {
               </Link>
               <Link href="/stores" className="whitespace-nowrap text-brand-dark">
                 Stores
+              </Link>
+              <Link href="/admin/login" className="whitespace-nowrap font-medium text-brand">
+                Admin
               </Link>
             </div>
           ) : null}
@@ -408,6 +413,18 @@ export function Header() {
                   >
                     Compare Products
                   </Link>
+                  <div className="border-t border-brand-border pt-4">
+                    <Link
+                      href="/admin/login"
+                      className="block text-sm font-semibold text-brand hover:text-brand-navy"
+                      onClick={() => setDrawerOpen(false)}
+                    >
+                      Admin login
+                    </Link>
+                    <p className="mt-1 text-xs text-brand-muted">
+                      Add, edit, or remove products
+                    </p>
+                  </div>
                 </div>
               </nav>
             </motion.aside>
