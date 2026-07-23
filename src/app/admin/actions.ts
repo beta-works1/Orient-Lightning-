@@ -2,9 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { eq } from "drizzle-orm";
-import { getDb } from "@/db";
-import { productCollections, products, collections, adminUsers } from "@/db/schema";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/admin";
 
@@ -22,12 +19,13 @@ async function requireAdmin() {
   } = await supabase.auth.getUser();
   assertAdminEmail(user?.email);
 
-  const db = getDb();
-  if (db && user?.email) {
-    const allowlist = await db.select({ email: adminUsers.email }).from(adminUsers);
-    const ok = allowlist.some((r) => r.email.toLowerCase() === user.email!.toLowerCase());
-    if (!ok) throw new Error("Unauthorized");
-  }
+  const sb = createServiceClient();
+  const { data: allowlist, error } = await sb.from("admin_users").select("email");
+  if (error) throw new Error(`admin allowlist: ${error.message}`);
+  const ok = (allowlist || []).some(
+    (r) => r.email.toLowerCase() === user!.email!.toLowerCase(),
+  );
+  if (!ok) throw new Error("Unauthorized");
 
   return user!;
 }
@@ -123,15 +121,21 @@ function parseForm(formData: FormData) {
 }
 
 async function syncCollections(productId: string, collectionHandles: string[]) {
-  const db = getDb();
-  if (!db) throw new Error("Database unavailable");
-  const cols = await db.select().from(collections);
-  const byHandle = new Map(cols.map((c) => [c.handle, c.id]));
-  await db.delete(productCollections).where(eq(productCollections.productId, productId));
-  for (const h of collectionHandles) {
-    const collectionId = byHandle.get(h);
-    if (!collectionId) continue;
-    await db.insert(productCollections).values({ productId, collectionId });
+  const sb = createServiceClient();
+  const { data: cols, error: colErr } = await sb.from("collections").select("id, handle");
+  if (colErr) throw new Error(colErr.message);
+
+  const byHandle = new Map((cols || []).map((c) => [c.handle, c.id]));
+  await sb.from("product_collections").delete().eq("product_id", productId);
+
+  const rows = collectionHandles
+    .map((h) => byHandle.get(h))
+    .filter(Boolean)
+    .map((collection_id) => ({ product_id: productId, collection_id: collection_id as string }));
+
+  if (rows.length) {
+    const { error } = await sb.from("product_collections").insert(rows);
+    if (error) throw new Error(error.message);
   }
 }
 
@@ -143,26 +147,28 @@ export async function createProduct(
   const { fieldErrors, data } = parseForm(formData);
   if (Object.keys(fieldErrors).length) return { fieldErrors };
 
-  const db = getDb();
-  if (!db) return { error: "Database unavailable" };
-
-  const existing = await db.select().from(products).where(eq(products.handle, data.handle)).limit(1);
-  if (existing.length) return { fieldErrors: { handle: "Handle already exists." } };
+  const sb = createServiceClient();
+  const { data: existing } = await sb
+    .from("products")
+    .select("id")
+    .eq("handle", data.handle)
+    .maybeSingle();
+  if (existing) return { fieldErrors: { handle: "Handle already exists." } };
 
   const id = `admin_${Date.now()}`;
   const options = data.optionsText
     ? [{ name: "Options", values: data.optionsText.split(",").map((s) => s.trim()).filter(Boolean) }]
     : [];
 
-  await db.insert(products).values({
+  const { error } = await sb.from("products").insert({
     id,
     handle: data.handle,
     title: data.title,
     description: data.description,
-    price: String(data.price),
-    compareAtPrice: data.compareAtPrice == null ? null : String(data.compareAtPrice),
+    price: data.price,
+    compare_at_price: data.compareAtPrice,
     sku: data.sku,
-    productType: data.productType,
+    product_type: data.productType,
     vendor: data.vendor,
     status: data.status,
     images: data.images,
@@ -179,11 +185,12 @@ export async function createProduct(
     options,
     tags: [],
     facets: { wattage: data.wattage, colorTemp: data.colorTemp },
-    seoTitle: data.title,
-    seoDescription: data.description.replace(/<[^>]+>/g, "").slice(0, 160),
-    publishedAt: data.status === "published" ? new Date() : null,
-    updatedAt: new Date(),
+    seo_title: data.title,
+    seo_description: data.description.replace(/<[^>]+>/g, "").slice(0, 160),
+    published_at: data.status === "published" ? new Date().toISOString() : null,
+    updated_at: new Date().toISOString(),
   });
+  if (error) return { error: error.message };
 
   await syncCollections(id, data.collectionHandles);
   revalidateCatalog([data.handle], data.collectionHandles);
@@ -199,73 +206,79 @@ export async function updateProduct(
   const { fieldErrors, data } = parseForm(formData);
   if (Object.keys(fieldErrors).length) return { fieldErrors };
 
-  const db = getDb();
-  if (!db) return { error: "Database unavailable" };
-
-  const [current] = await db.select().from(products).where(eq(products.id, id)).limit(1);
+  const sb = createServiceClient();
+  const { data: current } = await sb.from("products").select("*").eq("id", id).maybeSingle();
   if (!current) return { error: "Product not found." };
 
   if (data.handle !== current.handle) {
-    const clash = await db.select().from(products).where(eq(products.handle, data.handle)).limit(1);
-    if (clash.length) return { fieldErrors: { handle: "Handle already exists." } };
+    const { data: clash } = await sb
+      .from("products")
+      .select("id")
+      .eq("handle", data.handle)
+      .maybeSingle();
+    if (clash) return { fieldErrors: { handle: "Handle already exists." } };
   }
 
   const options = data.optionsText
     ? [{ name: "Options", values: data.optionsText.split(",").map((s) => s.trim()).filter(Boolean) }]
     : [];
 
-  await db
-    .update(products)
-    .set({
+  const { error } = await sb
+    .from("products")
+    .update({
       handle: data.handle,
       title: data.title,
       description: data.description,
-      price: String(data.price),
-      compareAtPrice: data.compareAtPrice == null ? null : String(data.compareAtPrice),
+      price: data.price,
+      compare_at_price: data.compareAtPrice,
       sku: data.sku,
-      productType: data.productType,
+      product_type: data.productType,
       vendor: data.vendor,
       status: data.status,
       images: data.images,
       options,
       facets: { wattage: data.wattage, colorTemp: data.colorTemp },
-      seoTitle: data.title,
-      seoDescription: data.description.replace(/<[^>]+>/g, "").slice(0, 160),
-      publishedAt:
-        data.status === "published" ? current.publishedAt ?? new Date() : current.publishedAt,
-      updatedAt: new Date(),
+      seo_title: data.title,
+      seo_description: data.description.replace(/<[^>]+>/g, "").slice(0, 160),
+      published_at:
+        data.status === "published"
+          ? current.published_at ?? new Date().toISOString()
+          : current.published_at,
+      updated_at: new Date().toISOString(),
     })
-    .where(eq(products.id, id));
+    .eq("id", id);
+  if (error) return { error: error.message };
 
   await syncCollections(id, data.collectionHandles);
-  revalidateCatalog(
-    [data.handle, current.handle].filter(Boolean),
-    data.collectionHandles,
-  );
+  revalidateCatalog([data.handle, current.handle].filter(Boolean), data.collectionHandles);
   redirect(`/admin/products/${id}?saved=1`);
 }
 
 export async function deleteProduct(id: string) {
   await requireAdmin();
-  const db = getDb();
-  if (!db) throw new Error("Database unavailable");
-  const [current] = await db.select().from(products).where(eq(products.id, id)).limit(1);
+  const sb = createServiceClient();
+  const { data: current } = await sb.from("products").select("handle").eq("id", id).maybeSingle();
   if (!current) throw new Error("Not found");
-  const handles = await db
-    .select({ handle: collections.handle })
-    .from(productCollections)
-    .innerJoin(collections, eq(productCollections.collectionId, collections.id))
-    .where(eq(productCollections.productId, id));
 
-  await db.delete(products).where(eq(products.id, id));
-  revalidateCatalog(
-    [current.handle],
-    handles.map((h) => h.handle),
-  );
+  const { data: joins } = await sb
+    .from("product_collections")
+    .select("collections(handle)")
+    .eq("product_id", id);
+
+  const collectionHandles = (joins || [])
+    .map((j) => (j as { collections?: { handle?: string } | null }).collections?.handle)
+    .filter(Boolean) as string[];
+
+  const { error } = await sb.from("products").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+
+  revalidateCatalog([current.handle], collectionHandles);
   redirect("/admin/products?deleted=1");
 }
 
-export async function uploadProductImage(formData: FormData): Promise<{ url?: string; error?: string }> {
+export async function uploadProductImage(
+  formData: FormData,
+): Promise<{ url?: string; error?: string }> {
   await requireAdmin();
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) {
