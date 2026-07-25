@@ -11,6 +11,9 @@ import {
 } from "@/lib/adminProductOptions";
 import type { ProductVariant } from "@/lib/types";
 import type { CatalogueSetting } from "@/lib/catalogueSettings";
+import { logoutAdmin } from "@/app/admin/logout";
+
+export { logoutAdmin };
 
 function assertAdminEmail(email: string | undefined) {
   const admin = process.env.ADMIN_EMAIL?.trim().toLowerCase();
@@ -46,12 +49,6 @@ function revalidateCatalog(handles: string[], collectionHandles: string[]) {
   revalidatePath("/sitemap.xml");
   for (const h of handles) revalidatePath(`/products/${h}`);
   for (const h of collectionHandles) revalidatePath(`/collections/${h}`);
-}
-
-export async function logoutAdmin() {
-  const supabase = await createClient();
-  await supabase.auth.signOut();
-  redirect("/admin/login");
 }
 
 export type ProductFormState = {
@@ -391,9 +388,11 @@ export async function uploadCatalogue(
 }
 
 export async function removeCatalogue(
-  _prev: CatalogueFormState,
-  _formData: FormData,
+  prev: CatalogueFormState,
+  formData: FormData,
 ): Promise<CatalogueFormState> {
+  void prev;
+  void formData;
   await requireAdmin();
   const sb = createServiceClient();
 

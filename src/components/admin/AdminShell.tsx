@@ -1,10 +1,11 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
 import { AdminNavProgress } from "@/components/admin/AdminNavProgress";
-import { logoutAdmin } from "@/app/admin/actions";
+import { logoutAdmin } from "@/app/admin/logout";
 
 const NAV = [
   { href: "/admin/products", label: "Products" },
@@ -39,9 +40,9 @@ export function AdminShell({ children }: { children: ReactNode }) {
         <header className="relative z-10 border-b border-white/15 bg-white/90 shadow-sm backdrop-blur-md">
           <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
             <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3 sm:gap-4">
-              <a href="/admin/products" className="text-sm font-bold tracking-wide text-[#0F428F]">
+              <Link href="/admin/products" className="text-sm font-bold tracking-wide text-[#0F428F]">
                 Orient Admin
-              </a>
+              </Link>
               <nav className="flex flex-wrap gap-1 text-sm sm:gap-2">
                 {NAV.map((item) => {
                   const active =
@@ -50,7 +51,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
                       : pathname === item.href || pathname.startsWith(`${item.href}/`);
                   const isCatalogue = item.href === "/admin/catalogue";
                   return (
-                    <a
+                    <Link
                       key={item.href}
                       href={item.href}
                       className={
@@ -62,9 +63,11 @@ export function AdminShell({ children }: { children: ReactNode }) {
                       }
                     >
                       {item.label}
-                    </a>
+                    </Link>
                   );
                 })}
+                {/* Hard navigation remounts the storefront shell cleanly */}
+                {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
                 <a
                   href="/"
                   className="rounded-md px-2 py-1 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
