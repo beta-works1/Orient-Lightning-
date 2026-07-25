@@ -83,7 +83,6 @@ export function IntroGate({ children }: { children: ReactNode }) {
           role="presentation"
           aria-hidden={phase === "exit"}
         >
-          <div className="intro-splash__glow" />
           <div className="intro-splash__mark">
             <BrandLogo variant="mark" priority className="intro-splash__mark-img" />
           </div>
@@ -93,7 +92,6 @@ export function IntroGate({ children }: { children: ReactNode }) {
           <p className="intro-splash__tag mt-4 text-xs uppercase tracking-[0.35em] text-white/70">
             Lighting Pakistan since 1996
           </p>
-          <div className="intro-splash__beam" />
         </div>
       ) : null}
 

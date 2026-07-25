@@ -130,13 +130,6 @@ html.intro-pending {
   pointer-events: none;
 }
 
-.intro-splash__glow {
-  position: absolute;
-  inset: 20% 15%;
-  background: radial-gradient(circle, rgba(15, 66, 143, 0.55) 0%, transparent 70%);
-  animation: intro-pulse 2.2s ease-in-out infinite;
-}
-
 .intro-splash__mark {
   position: relative;
   z-index: 1;
@@ -162,20 +155,6 @@ html.intro-pending {
   position: relative;
   z-index: 1;
   animation: intro-tag-in 0.7s ease-out 0.55s both;
-}
-
-.intro-splash__beam {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 18%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.08),
-    transparent
-  );
-  animation: intro-beam 1.6s ease-in-out 0.4s both;
 }
 
 @keyframes intro-fade-in {
@@ -229,25 +208,6 @@ html.intro-pending {
   }
 }
 
-@keyframes intro-beam {
-  from {
-    left: -35%;
-  }
-  to {
-    left: 110%;
-  }
-}
-
-@keyframes intro-pulse {
-  0%,
-  100% {
-    opacity: 0.55;
-  }
-  50% {
-    opacity: 0.9;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .animate-marquee {
     animation: none !important;
@@ -257,8 +217,6 @@ html.intro-pending {
   .intro-splash__mark,
   .intro-splash__wordmark,
   .intro-splash__tag,
-  .intro-splash__beam,
-  .intro-splash__glow,
   .site-shell--visible {
     animation: none !important;
   }
