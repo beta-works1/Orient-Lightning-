@@ -23,6 +23,12 @@ export default function AdminDashboardLayout({ children }: { children: React.Rea
               >
                 Add product
               </Link>
+              <Link
+                href="/admin/catalogue"
+                className="rounded-md px-2 py-1 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+              >
+                Catalogue
+              </Link>
               {/* Hard navigation remounts the storefront shell cleanly */}
               {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
               <a

@@ -11,6 +11,7 @@ import { ProductRail } from "@/components/ProductRail";
 import { FindAStoreCta } from "@/components/stores/FindAStoreCta";
 import { Reveal, MotionLink } from "@/components/motion/Reveal";
 import { getFeaturedProducts, getPublishedProductCount } from "@/lib/catalog";
+import { getCatalogueDownload } from "@/lib/catalogueSettings";
 import { CUSTOMER_LOGOS } from "@/lib/types";
 
 const LandingFlagships = dynamic(() =>
@@ -33,9 +34,10 @@ const TrustBadges = dynamic(() =>
 );
 
 export default async function HomePage() {
-  const [featured, productCount] = await Promise.all([
+  const [featured, productCount, catalogue] = await Promise.all([
     getFeaturedProducts(8),
     getPublishedProductCount(),
+    getCatalogueDownload(),
   ]);
   const years = new Date().getFullYear() - 1996;
 
@@ -64,7 +66,7 @@ export default async function HomePage() {
         <FindYourFit />
       </Reveal>
       <Reveal>
-        <LandingCompareCta />
+        <LandingCompareCta catalogue={catalogue} />
       </Reveal>
       <Reveal>
         <LandingFlagships />
@@ -74,7 +76,7 @@ export default async function HomePage() {
         <LandingConfidence />
       </Reveal>
       <Reveal>
-        <LandingSmart />
+        <LandingSmart catalogue={catalogue} />
       </Reveal>
       <Reveal>
         <Testimonials />

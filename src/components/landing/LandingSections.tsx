@@ -1,8 +1,8 @@
-import { DownloadCatalogue } from "@/components/DownloadCatalogue";
+import { DownloadCatalogue, type CatalogueLink } from "@/components/DownloadCatalogue";
 import { MotionLink } from "@/components/motion/Reveal";
 import { CompareSteps } from "@/components/landing/CompareSteps";
 
-export function LandingCompareCta() {
+export function LandingCompareCta({ catalogue }: { catalogue?: CatalogueLink | null }) {
   return (
     <section className="relative overflow-hidden bg-brand-navy py-16 text-white sm:py-20">
       <div className="pointer-events-none absolute -right-20 top-0 h-72 w-72 rounded-full bg-brand/40 blur-3xl" />
@@ -45,7 +45,7 @@ export function LandingCompareCta() {
             >
               Find My Match
             </MotionLink>
-            <DownloadCatalogue variant="hero" />
+            <DownloadCatalogue variant="hero" catalogue={catalogue} />
           </div>
         </div>
       </div>
@@ -111,7 +111,7 @@ export function LandingStats() {
   );
 }
 
-export function LandingSmart() {
+export function LandingSmart({ catalogue }: { catalogue?: CatalogueLink | null }) {
   return (
     <section className="bg-brand-off py-16 sm:py-20">
       <div className="mx-auto max-w-7xl px-4">
@@ -148,7 +148,7 @@ export function LandingSmart() {
               industrial lighting projects.
             </p>
             <div className="relative mt-6">
-              <DownloadCatalogue variant="hero" />
+              <DownloadCatalogue variant="hero" catalogue={catalogue} />
             </div>
           </div>
         </div>

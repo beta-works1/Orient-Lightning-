@@ -1,5 +1,3 @@
-import { SITE } from "@/lib/types";
-
 type Variant = "hero" | "pdp" | "outline";
 
 const styles: Record<Variant, string> = {
@@ -9,11 +7,23 @@ const styles: Record<Variant, string> = {
     "inline-flex items-center gap-2 rounded-md border border-brand px-5 py-2.5 text-sm font-semibold text-brand hover:bg-brand hover:text-white",
 };
 
-export function DownloadCatalogue({ variant = "outline" }: { variant?: Variant }) {
+export type CatalogueLink = { url: string; filename: string };
+
+export function DownloadCatalogue({
+  variant = "outline",
+  catalogue,
+}: {
+  variant?: Variant;
+  catalogue?: CatalogueLink | null;
+}) {
+  if (!catalogue?.url) return null;
+
   return (
     <a
-      href={SITE.catalogueUrl}
-      download={SITE.catalogueFilename}
+      href={catalogue.url}
+      download={catalogue.filename}
+      target="_blank"
+      rel="noopener noreferrer"
       className={styles[variant]}
     >
       {variant === "pdp" ? <DownloadIcon /> : null}

@@ -4,11 +4,17 @@ import { useCallback, useState } from "react";
 import type { Product, ProductVariant } from "@/lib/types";
 import { formatPrice } from "@/lib/format";
 import { CompareToggle } from "@/components/compare/CompareToggle";
-import { DownloadCatalogue } from "@/components/DownloadCatalogue";
+import { DownloadCatalogue, type CatalogueLink } from "@/components/DownloadCatalogue";
 import { BulbCalculator } from "@/components/BulbCalculator";
 import { ProductOptions } from "@/components/ProductOptions";
 
-export function ProductPurchase({ product }: { product: Product }) {
+export function ProductPurchase({
+  product,
+  catalogue,
+}: {
+  product: Product;
+  catalogue?: CatalogueLink | null;
+}) {
   const [variant, setVariant] = useState<ProductVariant | undefined>(product.variants[0]);
 
   const onVariantChange = useCallback((v: ProductVariant | undefined) => {
@@ -39,7 +45,7 @@ export function ProductPurchase({ product }: { product: Product }) {
 
       <div className="flex flex-wrap gap-3">
         <CompareToggle product={product} variant="pdp" />
-        <DownloadCatalogue variant="pdp" />
+        <DownloadCatalogue variant="pdp" catalogue={catalogue} />
       </div>
 
       <BulbCalculator product={product} variant={variant} />

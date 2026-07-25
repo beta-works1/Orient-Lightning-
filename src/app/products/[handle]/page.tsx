@@ -4,6 +4,7 @@ import { ProductGallery } from "@/components/ProductGallery";
 import { ProductPurchase } from "@/components/ProductPurchase";
 import { ProductRail } from "@/components/ProductRail";
 import { getProductByHandle, getRelatedProducts } from "@/lib/catalog";
+import { getCatalogueDownload } from "@/lib/catalogueSettings";
 
 type Props = { params: Promise<{ handle: string }> };
 
@@ -27,13 +28,16 @@ export default async function ProductPage({ params }: Props) {
   const product = await getProductByHandle(handle);
   if (!product) notFound();
 
-  const related = await getRelatedProducts(product, 4);
+  const [related, catalogue] = await Promise.all([
+    getRelatedProducts(product, 4),
+    getCatalogueDownload(),
+  ]);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
       <div className="grid gap-8 lg:grid-cols-2">
         <ProductGallery images={product.images} title={product.title} />
-        <ProductPurchase product={product} />
+        <ProductPurchase product={product} catalogue={catalogue} />
       </div>
 
       {product.description ? (

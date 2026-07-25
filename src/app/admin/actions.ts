@@ -10,6 +10,7 @@ import {
   stripHtml,
 } from "@/lib/adminProductOptions";
 import type { ProductVariant } from "@/lib/types";
+import { saveCatalogueSetting, type CatalogueSetting } from "@/lib/catalogueSettings";
 
 function assertAdminEmail(email: string | undefined) {
   const admin = process.env.ADMIN_EMAIL?.trim().toLowerCase();
@@ -322,4 +323,94 @@ export async function uploadProductImage(
 
   const { data } = sb.storage.from("product-images").getPublicUrl(path);
   return { url: data.publicUrl };
+}
+
+export type CatalogueFormState = {
+  ok?: boolean;
+  error?: string;
+};
+
+function revalidateCataloguePaths() {
+  revalidateTag("catalogue");
+  revalidatePath("/");
+  revalidatePath("/admin/catalogue");
+}
+
+export async function uploadCatalogue(
+  _prev: CatalogueFormState,
+  formData: FormData,
+): Promise<CatalogueFormState> {
+  await requireAdmin();
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) {
+    return { error: "Choose a PDF file." };
+  }
+
+  const isPdf =
+    file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+  if (!isPdf) return { error: "Only PDF catalogues are allowed." };
+  if (file.size > 25 * 1024 * 1024) return { error: "PDF must be under 25MB." };
+
+  const sb = createServiceClient();
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-") || "catalogue.pdf";
+  const storagePath = `current/${Date.now()}-${safeName}`;
+  const buffer = Buffer.from(await file.arrayBuffer());
+
+  const { error: uploadError } = await sb.storage.from("catalogues").upload(storagePath, buffer, {
+    contentType: "application/pdf",
+    upsert: true,
+  });
+  if (uploadError) return { error: `Upload failed: ${uploadError.message}` };
+
+  const { data } = sb.storage.from("catalogues").getPublicUrl(storagePath);
+  const value: CatalogueSetting = {
+    enabled: true,
+    url: data.publicUrl,
+    filename: safeName.endsWith(".pdf") ? safeName : `${safeName}.pdf`,
+    storagePath,
+  };
+
+  try {
+    await saveCatalogueSetting(value);
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Could not save catalogue setting." };
+  }
+
+  revalidateCataloguePaths();
+  return { ok: true };
+}
+
+export async function removeCatalogue(
+  _prev: CatalogueFormState,
+  _formData: FormData,
+): Promise<CatalogueFormState> {
+  await requireAdmin();
+  const sb = createServiceClient();
+
+  const { data: row } = await sb
+    .from("site_settings")
+    .select("value")
+    .eq("key", "catalogue")
+    .maybeSingle();
+
+  const current = (row?.value || {}) as Partial<CatalogueSetting>;
+  if (current.storagePath) {
+    await sb.storage.from("catalogues").remove([current.storagePath]);
+  }
+
+  const value: CatalogueSetting = {
+    enabled: false,
+    url: null,
+    filename: "Orient-Lighting-Catalogue.pdf",
+    storagePath: null,
+  };
+
+  try {
+    await saveCatalogueSetting(value);
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Could not remove catalogue." };
+  }
+
+  revalidateCataloguePaths();
+  return { ok: true };
 }
