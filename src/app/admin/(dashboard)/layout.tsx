@@ -25,7 +25,7 @@ export default function AdminDashboardLayout({ children }: { children: React.Rea
               </Link>
               <Link
                 href="/admin/catalogue"
-                className="rounded-md px-2 py-1 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                className="rounded-md bg-[#0F428F]/10 px-2 py-1 font-medium text-[#0F428F] hover:bg-[#0F428F]/15"
               >
                 Catalogue
               </Link>

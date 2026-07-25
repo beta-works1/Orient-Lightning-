@@ -26,12 +26,20 @@ export default async function AdminProductsPage({ searchParams }: Props) {
           <h1 className="text-2xl font-bold text-slate-900">Products</h1>
           <p className="text-sm text-slate-500">{products.length} shown · create, edit, or delete</p>
         </div>
-        <Link
-          href="/admin/products/new"
-          className="inline-flex min-h-[44px] items-center justify-center rounded-md bg-[#0F428F] px-4 text-sm font-semibold text-white hover:bg-[#162950]"
-        >
-          Add product
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/admin/catalogue"
+            className="inline-flex min-h-[44px] items-center justify-center rounded-md border border-[#0F428F] bg-white px-4 text-sm font-semibold text-[#0F428F] hover:bg-[#0F428F]/5"
+          >
+            Catalogue PDF
+          </Link>
+          <Link
+            href="/admin/products/new"
+            className="inline-flex min-h-[44px] items-center justify-center rounded-md bg-[#0F428F] px-4 text-sm font-semibold text-white hover:bg-[#162950]"
+          >
+            Add product
+          </Link>
+        </div>
       </div>
 
       {sp.deleted ? (
