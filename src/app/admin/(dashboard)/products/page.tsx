@@ -28,6 +28,12 @@ export default async function AdminProductsPage({ searchParams }: Props) {
         </div>
         <div className="flex flex-wrap gap-2">
           <Link
+            href="/admin/featured"
+            className="inline-flex min-h-[44px] items-center justify-center rounded-md border border-[#0F428F] bg-white px-4 text-sm font-semibold text-[#0F428F] hover:bg-[#0F428F]/5"
+          >
+            Featured this week
+          </Link>
+          <Link
             href="/admin/catalogue"
             className="inline-flex min-h-[44px] items-center justify-center rounded-md border border-[#0F428F] bg-white px-4 text-sm font-semibold text-[#0F428F] hover:bg-[#0F428F]/5"
           >

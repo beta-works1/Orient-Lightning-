@@ -12,6 +12,7 @@ import { FindAStoreCta } from "@/components/stores/FindAStoreCta";
 import { Reveal, MotionLink } from "@/components/motion/Reveal";
 import { getFeaturedProducts, getPublishedProductCount } from "@/lib/catalog";
 import { getCatalogueDownload } from "@/lib/catalogueSettings";
+import { getFeaturedSetting } from "@/lib/featuredSettings";
 import { CUSTOMER_LOGOS } from "@/lib/types";
 
 const LandingFlagships = dynamic(() =>
@@ -34,10 +35,11 @@ const TrustBadges = dynamic(() =>
 );
 
 export default async function HomePage() {
-  const [featured, productCount, catalogue] = await Promise.all([
+  const [featured, productCount, catalogue, featuredMeta] = await Promise.all([
     getFeaturedProducts(8),
     getPublishedProductCount(),
     getCatalogueDownload(),
+    getFeaturedSetting(),
   ]);
   const years = new Date().getFullYear() - 1996;
 
@@ -56,7 +58,11 @@ export default async function HomePage() {
       </Reveal>
       <Reveal>
         <div className="border-y border-brand-border/60 bg-brand-ice/40">
-          <ProductRail title="Featured this week" products={featured} href="/collections/best-sellers" />
+          <ProductRail
+            title={featuredMeta.title}
+            products={featured}
+            href={featuredMeta.viewAllHref}
+          />
         </div>
       </Reveal>
       <Reveal>

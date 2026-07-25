@@ -303,6 +303,19 @@ export const getProductsForCollection = cache(async (handle: string): Promise<Pr
 });
 
 export async function getFeaturedProducts(limit = 8): Promise<Product[]> {
+  const { getFeaturedSetting } = await import("@/lib/featuredSettings");
+  const setting = await getFeaturedSetting();
+
+  if (setting.handles.length) {
+    const all = await getAllProducts();
+    const byHandle = new Map(all.map((p) => [p.handle, p]));
+    const picked = setting.handles
+      .map((h) => byHandle.get(h))
+      .filter((p): p is NonNullable<typeof p> => Boolean(p))
+      .slice(0, limit);
+    if (picked.length) return picked;
+  }
+
   const best = await getProductsForCollection("best-sellers");
   if (best.length) return best.slice(0, limit);
   return (await getAllProducts()).slice(0, limit);

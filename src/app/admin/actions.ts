@@ -423,3 +423,39 @@ export async function removeCatalogue(
   revalidateCataloguePaths();
   return { ok: true };
 }
+
+export type FeaturedFormState = {
+  ok?: boolean;
+  error?: string;
+};
+
+export async function saveFeaturedWeek(
+  _prev: FeaturedFormState,
+  formData: FormData,
+): Promise<FeaturedFormState> {
+  await requireAdmin();
+
+  const title = String(formData.get("title") || "").trim() || "Featured this week";
+  const viewAllHref =
+    String(formData.get("viewAllHref") || "").trim() || "/collections/best-sellers";
+  const handles = formData
+    .getAll("handles")
+    .map(String)
+    .map((h) => h.trim())
+    .filter(Boolean)
+    .slice(0, 12);
+
+  const sb = createServiceClient();
+  const { error } = await sb.from("site_settings").upsert({
+    key: "featured_week",
+    value: { handles, title, viewAllHref },
+    updated_at: new Date().toISOString(),
+  });
+  if (error) return { error: error.message };
+
+  revalidateTag("featured");
+  revalidateTag("catalog");
+  revalidatePath("/");
+  revalidatePath("/admin/featured");
+  return { ok: true };
+}

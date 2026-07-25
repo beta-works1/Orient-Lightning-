@@ -10,6 +10,7 @@ import { logoutAdmin } from "@/app/admin/logout";
 const NAV = [
   { href: "/admin/products", label: "Products" },
   { href: "/admin/products/new", label: "Add product" },
+  { href: "/admin/featured", label: "Featured" },
   { href: "/admin/catalogue", label: "Catalogue" },
 ] as const;
 
@@ -49,13 +50,14 @@ export function AdminShell({ children }: { children: ReactNode }) {
                     item.href === "/admin/products"
                       ? pathname === "/admin/products" || pathname.startsWith("/admin/products/")
                       : pathname === item.href || pathname.startsWith(`${item.href}/`);
-                  const isCatalogue = item.href === "/admin/catalogue";
+                  const isAccent =
+                    item.href === "/admin/catalogue" || item.href === "/admin/featured";
                   return (
                     <Link
                       key={item.href}
                       href={item.href}
                       className={
-                        isCatalogue
+                        isAccent
                           ? "rounded-md bg-[#0F428F] px-2.5 py-1 font-semibold text-white hover:bg-[#162950]"
                           : active
                             ? "rounded-md px-2 py-1 font-medium text-[#0F428F] hover:bg-slate-100"
