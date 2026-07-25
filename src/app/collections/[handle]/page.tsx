@@ -58,21 +58,18 @@ export default async function CollectionPage({ params, searchParams }: Props) {
     { id: "daylight", label: "Daylight", kelvin: "6500" },
   ] as const;
 
-  const colorFilterOptions = toneOptions
-    .map((t) => {
-      const hasKelvin = temps.some((x) => String(x).replace(/k$/i, "") === t.kelvin);
-      const hasAnyTemp = temps.length > 0;
-      if (hasAnyTemp && !hasKelvin) {
-        // Still show tone if collection has other temps — only include matching pairs when temps exist
-        return null;
-      }
-      return {
+  const colorFilterOptions = toneOptions.flatMap((t) => {
+    const hasKelvin = temps.some((x) => String(x).replace(/k$/i, "") === t.kelvin);
+    const hasAnyTemp = temps.length > 0;
+    if (hasAnyTemp && !hasKelvin) return [];
+    return [
+      {
         id: t.id,
         kelvin: t.kelvin,
         label: `${t.label}/${t.kelvin}K`,
-      };
-    })
-    .filter((x): x is { id: string; kelvin: string; label: string } => x != null);
+      },
+    ];
+  });
 
   // If no facet kelvins, fall back to tone-only labels with standard CCT
   const colorChips =
