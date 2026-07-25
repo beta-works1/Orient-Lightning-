@@ -10,7 +10,7 @@ import {
   stripHtml,
 } from "@/lib/adminProductOptions";
 import type { ProductVariant } from "@/lib/types";
-import { saveCatalogueSetting, type CatalogueSetting } from "@/lib/catalogueSettings";
+import type { CatalogueSetting } from "@/lib/catalogueSettings";
 
 function assertAdminEmail(email: string | undefined) {
   const admin = process.env.ADMIN_EMAIL?.trim().toLowerCase();
@@ -329,6 +329,16 @@ export type CatalogueFormState = {
   ok?: boolean;
   error?: string;
 };
+
+async function saveCatalogueSetting(value: CatalogueSetting) {
+  const sb = createServiceClient();
+  const { error } = await sb.from("site_settings").upsert({
+    key: "catalogue",
+    value,
+    updated_at: new Date().toISOString(),
+  });
+  if (error) throw new Error(error.message);
+}
 
 function revalidateCataloguePaths() {
   revalidateTag("catalogue");

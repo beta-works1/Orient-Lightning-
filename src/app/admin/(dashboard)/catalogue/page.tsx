@@ -1,8 +1,18 @@
 import { CatalogueAdminForm } from "@/components/admin/CatalogueAdminForm";
-import { getCatalogueSetting } from "@/lib/catalogueSettings";
+import {
+  DEFAULT_CATALOGUE,
+  getCatalogueSettingFresh,
+} from "@/lib/catalogueSettings";
+
+export const dynamic = "force-dynamic";
 
 export default async function AdminCataloguePage() {
-  const current = await getCatalogueSetting();
+  let current = DEFAULT_CATALOGUE;
+  try {
+    current = await getCatalogueSettingFresh();
+  } catch {
+    current = DEFAULT_CATALOGUE;
+  }
 
   return (
     <div>

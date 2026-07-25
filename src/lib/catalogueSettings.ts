@@ -1,7 +1,6 @@
 import { unstable_cache } from "next/cache";
 import { createClient } from "@supabase/supabase-js";
 import { SITE } from "@/lib/types";
-import { createServiceClient } from "@/lib/supabase/admin";
 
 export type CatalogueSetting = {
   enabled: boolean;
@@ -10,7 +9,7 @@ export type CatalogueSetting = {
   storagePath: string | null;
 };
 
-const DEFAULT_CATALOGUE: CatalogueSetting = {
+export const DEFAULT_CATALOGUE: CatalogueSetting = {
   enabled: true,
   url: SITE.catalogueUrl,
   filename: SITE.catalogueFilename,
@@ -55,6 +54,11 @@ async function fetchCatalogueSetting(): Promise<CatalogueSetting> {
   }
 }
 
+/** Uncached read — preferred for admin pages. */
+export async function getCatalogueSettingFresh(): Promise<CatalogueSetting> {
+  return fetchCatalogueSetting();
+}
+
 export const getCatalogueSetting = unstable_cache(
   fetchCatalogueSetting,
   ["site-catalogue-v1"],
@@ -69,14 +73,4 @@ export async function getCatalogueDownload(): Promise<{
   const setting = await getCatalogueSetting();
   if (!setting.enabled || !setting.url) return null;
   return { url: setting.url, filename: setting.filename };
-}
-
-export async function saveCatalogueSetting(value: CatalogueSetting) {
-  const sb = createServiceClient();
-  const { error } = await sb.from("site_settings").upsert({
-    key: "catalogue",
-    value,
-    updated_at: new Date().toISOString(),
-  });
-  if (error) throw new Error(error.message);
 }
