@@ -1,4 +1,5 @@
 import type { Product, ProductVariant } from "@/lib/types";
+import { findCatalogueRow, resolveCatalogueSpecs } from "@/lib/catalogueSpecs";
 
 /** Typical maintained illuminance targets in foot-candles (lm/ft²). */
 export const ROOM_TYPES = [
@@ -25,13 +26,22 @@ export function parseWattage(text: string | null | undefined): number | null {
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
+/** Match lumen totals — never efficacy like "140 lm/W". */
 export function parseLumensFromText(text: string | null | undefined): number | null {
   if (!text) return null;
   const plain = text.replace(/<[^>]+>/g, " ");
-  const m = plain.match(/(\d[\d,]*)\s*(?:lumens?|lm)\b/i);
-  if (!m) return null;
-  const n = Number(m[1].replace(/,/g, ""));
-  return Number.isFinite(n) && n > 0 ? n : null;
+  const matches = [
+    ...plain.matchAll(/(\d[\d,]*)\s*(?:lumens?|lm)(?!\s*\/\s*w)(?![a-zA-Z])/gi),
+  ];
+  if (!matches.length) return null;
+  // Prefer the largest plausible total (avoids picking efficacy leftovers).
+  let best: number | null = null;
+  for (const m of matches) {
+    const n = Number(m[1].replace(/,/g, ""));
+    if (!Number.isFinite(n) || n <= 0) continue;
+    if (best == null || n > best) best = n;
+  }
+  return best;
 }
 
 /** Prefer lumen row matching selected wattage from catalogue HTML tables. */
@@ -53,10 +63,13 @@ export function parseLumensForWattage(
     }
   }
 
-  // Fallback: "12W ... 1140 lm" style proximity in plain text
+  // Plain mash: 100W14,000 lm… or 100 W … 14000
   const plain = text.replace(/<[^>]+>/g, " ");
   const near = plain.match(
-    new RegExp(`${watts}\\s*W[^\\d]{0,40}(\\d[\\d,]*)\\s*(?:lumens?|lm)\\b`, "i"),
+    new RegExp(
+      `${watts}\\s*W[^\\d]{0,24}(\\d[\\d,]*)\\s*(?:lumens?|lm)(?!\\s*/\\s*w)`,
+      "i",
+    ),
   );
   if (near) {
     const n = Number(near[1].replace(/,/g, ""));
@@ -99,8 +112,13 @@ export function getProductLumens(product: Product, variant?: ProductVariant | nu
   watts: number | null;
 } {
   const watts = getProductWattage(product, variant);
-  const listed = parseLumensForWattage(product.description, watts);
+  const catalogue = resolveCatalogueSpecs(product.handle, product.description);
+  const fromCatalogue = findCatalogueRow(catalogue, watts)?.lumens;
+  if (fromCatalogue) {
+    return { lumens: fromCatalogue, source: "listed", watts };
+  }
 
+  const listed = parseLumensForWattage(product.description, watts);
   if (listed) {
     return { lumens: listed, source: "listed", watts };
   }

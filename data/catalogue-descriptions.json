@@ -789,19 +789,19 @@
         "model": "OL-HB100R",
         "watts": "100W",
         "lumens": "14,000 lm",
-        "notes": "292×168 · 140 lm/W"
+        "notes": "292×168 · 140 lm/W · CCT 3000/4000/6500K"
       },
       {
         "model": "OL-HB150R",
         "watts": "150W",
         "lumens": "21,000 lm",
-        "notes": "342×172 · 140 lm/W"
+        "notes": "342×172 · 140 lm/W · CCT 3000/4000/6500K"
       },
       {
         "model": "OL-HB200R",
         "watts": "200W",
         "lumens": "28,000 lm",
-        "notes": "382×175 · 140 lm/W"
+        "notes": "382×175 · 140 lm/W · CCT 3000/4000/6500K"
       }
     ],
     "features": [
@@ -809,7 +809,8 @@
       "Polycarbonate optic lens",
       "Powder-coated finish",
       "IP66 waterproof/dustproof",
-      "IK08 impact resistance"
+      "IK08 impact resistance",
+      "CCT 3000/4000/6500K"
     ],
     "applications": [
       "Factories",

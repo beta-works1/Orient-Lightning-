@@ -1,18 +1,19 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import type { Product } from "@/lib/types";
+import { useCallback, useState } from "react";
+import type { Product, ProductVariant } from "@/lib/types";
 import { formatPrice } from "@/lib/format";
 import { CompareToggle } from "@/components/compare/CompareToggle";
 import { DownloadCatalogue } from "@/components/DownloadCatalogue";
 import { BulbCalculator } from "@/components/BulbCalculator";
+import { ProductOptions } from "@/components/ProductOptions";
 
 export function ProductPurchase({ product }: { product: Product }) {
-  const [variantId, setVariantId] = useState(product.variants[0]?.id);
-  const variant = useMemo(
-    () => product.variants.find((v) => v.id === variantId) || product.variants[0],
-    [product.variants, variantId],
-  );
+  const [variant, setVariant] = useState<ProductVariant | undefined>(product.variants[0]);
+
+  const onVariantChange = useCallback((v: ProductVariant | undefined) => {
+    setVariant(v);
+  }, []);
 
   const price = variant?.price ?? product.price;
   const compare = variant?.compareAtPrice ?? product.compareAtPrice;
@@ -34,27 +35,7 @@ export function ProductPurchase({ product }: { product: Product }) {
         ) : null}
       </div>
 
-      {product.variants.length > 1 ? (
-        <div>
-          <label className="text-sm font-medium text-brand-navy">Options</label>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {product.variants.map((v) => (
-              <button
-                key={v.id}
-                type="button"
-                onClick={() => setVariantId(v.id)}
-                className={`rounded-md border px-3 py-1.5 text-sm ${
-                  variantId === v.id
-                    ? "border-brand bg-brand text-white"
-                    : "border-brand-border hover:border-brand"
-                }`}
-              >
-                {v.title}
-              </button>
-            ))}
-          </div>
-        </div>
-      ) : null}
+      <ProductOptions product={product} onVariantChange={onVariantChange} />
 
       <div className="flex flex-wrap gap-3">
         <CompareToggle product={product} variant="pdp" />

@@ -113,67 +113,42 @@ export const CATEGORY_TILES = [
   {
     label: "Bulbs",
     href: "/collections/bulbs",
-    image: "/images/categories/bulbs-icon.png",
+    image: "/images/categories/wall-lights-icon.png",
   },
   {
     label: "Downlights",
     href: "/collections/downlights",
-    image: "/images/categories/downlights-icon.png",
+    image: "/images/categories/panels-icon.png",
   },
   {
     label: "Panels",
     href: "/collections/led-recessed-surface-panels",
-    image: "/images/categories/panels-icon.png",
-  },
-  {
-    label: "Track Lights",
-    href: "/collections/track-light",
-    image: "/images/categories/track-lights-icon.png",
-  },
-  {
-    label: "Flood Lights",
-    href: "/collections/flood-lights",
-    image: "/images/categories/flood-lights-icon.png",
-  },
-  {
-    label: "Spot Lights",
-    href: "/collections/spot-light",
-    image: "/images/categories/spot-lights-icon.png",
-  },
-  {
-    label: "Street Lights",
-    href: "/collections/street-light",
-    image: "/images/categories/street-lights-icon.png",
-  },
-  {
-    label: "Lamps",
-    href: "/collections/led-bulbs",
-    image: "/images/categories/lamps-icon.png",
+    image: "/images/categories/panels-grid-icon.png",
   },
   {
     label: "Battens",
     href: "/collections/battens-tube-lights",
-    image: "/images/categories/battens-icon.png",
+    image: "/images/categories/lamps-icon.png",
+  },
+  {
+    label: "Track Lights",
+    href: "/collections/track-light",
+    image: "/images/categories/flood-lights-icon.png",
+  },
+  {
+    label: "Flood Lights",
+    href: "/collections/flood-lights",
+    image: "/images/categories/track-lights-icon.png",
+  },
+  {
+    label: "Street Lights",
+    href: "/collections/street-light",
+    image: "/images/categories/spot-lights-icon.png",
   },
   {
     label: "Highbay Lights",
     href: "/collections/highbay-lights",
-    image: "/images/categories/highbay-lights-icon.png",
-  },
-  {
-    label: "Fixtures",
-    href: "/collections/residential-lighting",
-    image: "/images/categories/fixtures-icon.png",
-  },
-  {
-    label: "Wall Lights",
-    href: "/collections/spot-light",
-    image: "/images/categories/wall-lights-icon.png",
-  },
-  {
-    label: "Smart Lights",
-    href: "/collections/smart-lights",
-    image: "/images/categories/fixtures-icon.png",
+    image: "/images/categories/battens-icon.png",
   },
 ] as const;
 

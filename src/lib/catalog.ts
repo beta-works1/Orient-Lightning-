@@ -134,7 +134,7 @@ async function fetchPublishedProducts(): Promise<(Product & { status: "draft" | 
   return rows.map((row) => mapProduct(row, handles.get(row.id) ?? []));
 }
 
-const cachedPublishedProducts = unstable_cache(fetchPublishedProducts, ["catalog-products-v2"], {
+const cachedPublishedProducts = unstable_cache(fetchPublishedProducts, ["catalog-products-v3"], {
   revalidate: CATALOG_REVALIDATE,
   tags: ["catalog"],
 });
@@ -413,6 +413,7 @@ export function filterProducts(
   opts: {
     wattage?: string;
     colorTemp?: string;
+    lightTone?: string;
     minPrice?: number;
     maxPrice?: number;
     sort?: string;
@@ -431,6 +432,28 @@ export function filterProducts(
         p.handle.includes(ct) ||
         p.title.toLowerCase().includes(`${ct}k`),
     );
+  }
+  if (opts.lightTone) {
+    const tone = opts.lightTone.toLowerCase();
+    list = list.filter((p) => {
+      const temps = p.facets?.colorTemp || [];
+      if (!temps.length) {
+        // Fall back: search tags/title for warm/natural/day
+        const hay = `${p.title} ${(p.tags || []).join(" ")}`.toLowerCase();
+        if (tone === "warm") return /warm/.test(hay);
+        if (tone === "natural") return /natural/.test(hay);
+        if (tone === "daylight") return /day\s*light|daylight|cool/.test(hay);
+        return true;
+      }
+      return temps.some((t) => {
+        const k = Number(String(t).replace(/k$/i, ""));
+        if (!Number.isFinite(k)) return false;
+        if (tone === "warm") return k < 3500;
+        if (tone === "natural") return k >= 3500 && k < 5000;
+        if (tone === "daylight") return k >= 5000;
+        return true;
+      });
+    });
   }
   if (opts.minPrice != null) list = list.filter((p) => p.price >= opts.minPrice!);
   if (opts.maxPrice != null) list = list.filter((p) => p.price <= opts.maxPrice!);

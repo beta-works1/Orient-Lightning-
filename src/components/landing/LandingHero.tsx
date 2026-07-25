@@ -43,11 +43,11 @@ const SLIDES = [
     cta: "Explore Outdoor",
   },
   {
-    title: "PANELS THAT PERFORM.",
-    description: "Recessed and surface LED panels with clean, even light.",
-    href: "/collections/led-recessed-surface-panels",
+    title: "STREET LIGHT THAT PERFORM.",
+    description: "Reliable LED street lights engineered for roads and outdoor sites.",
+    href: "/collections/street-light",
     image: "/images/promo/industrial-2.jpg",
-    cta: "Explore Panels",
+    cta: "Explore Street Light",
   },
 ] as const;
 

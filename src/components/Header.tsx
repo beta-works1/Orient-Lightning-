@@ -257,12 +257,6 @@ export function Header() {
                   overlay={overlay}
                 />
               ))}
-              <NavUnderlineLink href="/collections/smart-lights" reduce={reduce} overlay={overlay}>
-                Smart Lights
-              </NavUnderlineLink>
-              <NavUnderlineLink href="/stores" reduce={reduce} overlay={overlay}>
-                Stores
-              </NavUnderlineLink>
             </nav>
 
             <div
@@ -305,23 +299,11 @@ export function Header() {
 
           {!overlay ? (
             <div className="flex gap-3 overflow-x-auto border-t border-brand-border px-4 py-2 text-xs lg:hidden">
-              <Link href="/collections/bulbs" className="whitespace-nowrap text-brand-dark">
-                Bulbs
+              <Link href="/collections/residential-lighting" className="whitespace-nowrap text-brand-dark">
+                Residential
               </Link>
-              <Link href="/collections/downlights" className="whitespace-nowrap text-brand-dark">
-                Downlights
-              </Link>
-              <Link href="/collections/led-recessed-surface-panels" className="whitespace-nowrap text-brand-dark">
-                Panels
-              </Link>
-              <Link href="/collections/flood-lights" className="whitespace-nowrap text-brand-dark">
-                Flood
-              </Link>
-              <Link href="/collections/smart-lights" className="whitespace-nowrap text-brand-dark">
-                Smart
-              </Link>
-              <Link href="/stores" className="whitespace-nowrap text-brand-dark">
-                Stores
+              <Link href="/collections/commercial-lighting" className="whitespace-nowrap text-brand-dark">
+                Commercial
               </Link>
             </div>
           ) : null}
@@ -386,20 +368,6 @@ export function Header() {
                       </div>
                     </div>
                   ))}
-                  <Link
-                    href="/collections/smart-lights"
-                    className="block text-sm font-medium text-brand-dark hover:text-brand"
-                    onClick={() => setDrawerOpen(false)}
-                  >
-                    Smart Lights
-                  </Link>
-                  <Link
-                    href="/stores"
-                    className="block text-sm font-medium text-brand-dark hover:text-brand"
-                    onClick={() => setDrawerOpen(false)}
-                  >
-                    Stores
-                  </Link>
                   <Link
                     href="/compare"
                     className="block text-sm font-medium text-brand-dark hover:text-brand"

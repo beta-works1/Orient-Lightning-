@@ -309,9 +309,9 @@ const CATALOGUE: Record<string, CatalogueEntry> = {
     sourcePage: "p.18",
     blurb: "Industrial UFO high bays with 140 lm/W efficacy for factories and warehouses.",
     specs: [
-      { model: "OL-HB100R", watts: "100W", lumens: "14,000 lm", notes: "292×168 · 140 lm/W" },
-      { model: "OL-HB150R", watts: "150W", lumens: "21,000 lm", notes: "342×172 · 140 lm/W" },
-      { model: "OL-HB200R", watts: "200W", lumens: "28,000 lm", notes: "382×175 · 140 lm/W" },
+      { model: "OL-HB100R", watts: "100W", lumens: "14,000 lm", notes: "292×168 · 140 lm/W · CCT 3000/4000/6500K" },
+      { model: "OL-HB150R", watts: "150W", lumens: "21,000 lm", notes: "342×172 · 140 lm/W · CCT 3000/4000/6500K" },
+      { model: "OL-HB200R", watts: "200W", lumens: "28,000 lm", notes: "382×175 · 140 lm/W · CCT 3000/4000/6500K" },
     ],
     features: [
       "Die-cast aluminium housing",
@@ -319,6 +319,7 @@ const CATALOGUE: Record<string, CatalogueEntry> = {
       "Powder-coated finish",
       "IP66 waterproof/dustproof",
       "IK08 impact resistance",
+      "CCT 3000/4000/6500K",
     ],
     applications: ["Factories", "Warehouses", "Terminals", "Halls"],
     electrical: ["PF 0.9", "IP66", "CRI ≥80", "Surge 6KV", "Life 50,000 H", "Voltage 85–256V", "Beam 120°"],
