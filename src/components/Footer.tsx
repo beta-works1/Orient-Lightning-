@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FOOTER_LINKS, SITE } from "@/lib/types";
+import { FOOTER_LINKS, SITE, WHATSAPP_URL } from "@/lib/types";
 import { NewsletterForm } from "./NewsletterForm";
 import { BrandLogo } from "@/components/BrandLogo";
 
@@ -54,6 +54,11 @@ export function Footer() {
             <li>
               <FooterLink href={`tel:${SITE.phoneDisplay.replace(/\s/g, "")}`}>
                 {SITE.phoneDisplay}
+              </FooterLink>
+            </li>
+            <li>
+              <FooterLink href={WHATSAPP_URL} external>
+                WhatsApp {SITE.phoneDisplay}
               </FooterLink>
             </li>
             <li className="text-brand-muted">{SITE.hours}</li>

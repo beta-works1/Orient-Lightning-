@@ -75,6 +75,8 @@ export const SITE = {
   emailSales: "sales@orientlighting.pk",
   emailCare: "care@orientlighting.pk",
   phoneDisplay: "+92 300 1674368",
+  /** Digits only for wa.me / tel links */
+  whatsapp: "923001674368",
   hours: "10AM–7PM Mon–Fri",
   address: "Gate #2, 26km Multan Rd, Maraka Village, Lahore, Punjab 54000",
   darazUrl: "https://www.daraz.pk/shop/orient-lighting/",
@@ -82,6 +84,8 @@ export const SITE = {
   catalogueUrl: "/orient-lighting-catalogue.pdf",
   catalogueFilename: "Orient-Lighting-Catalogue.pdf",
 };
+
+export const WHATSAPP_URL = `https://wa.me/${SITE.whatsapp}`;
 
 export const NAV = [
   {
