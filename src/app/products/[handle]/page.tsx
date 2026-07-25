@@ -39,9 +39,10 @@ export default async function ProductPage({ params }: Props) {
       {product.description ? (
         <section className="mt-12 border-t border-brand-border pt-8">
           <h2 className="font-display text-2xl text-brand-navy">Description</h2>
-          <div className="prose-product mt-4 max-w-3xl whitespace-pre-wrap text-sm text-brand-charcoal">
-            {product.description}
-          </div>
+          <div
+            className="prose-product mt-4 max-w-3xl text-sm text-brand-charcoal"
+            dangerouslySetInnerHTML={{ __html: product.description }}
+          />
         </section>
       ) : null}
 

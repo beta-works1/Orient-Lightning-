@@ -9,6 +9,7 @@ import {
   type ProductFormState,
 } from "@/app/admin/actions";
 import { InlineSpinner } from "@/components/admin/AnimatedLoader";
+import { looksLikeHtml } from "@/lib/adminProductOptions";
 
 type CollectionOption = { handle: string; title: string };
 
@@ -36,22 +37,6 @@ const empty: ProductFormState = {};
 const inputClass =
   "w-full rounded-md border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-[#0F428F]";
 
-/** Show plain text in the admin editor (strip leftover HTML from old imports). */
-function toPlainDescription(value: string) {
-  return value
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<\/p>/gi, "\n\n")
-    .replace(/<\/div>/gi, "\n")
-    .replace(/<[^>]+>/g, "")
-    .replace(/&nbsp;/gi, " ")
-    .replace(/&amp;/gi, "&")
-    .replace(/&lt;/gi, "<")
-    .replace(/&gt;/gi, ">")
-    .replace(/&quot;/gi, '"')
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
-}
-
 export function ProductForm({ mode, productId, collections, initial }: Props) {
   const action =
     mode === "create"
@@ -62,6 +47,8 @@ export function ProductForm({ mode, productId, collections, initial }: Props) {
   const [imageList, setImageList] = useState<string[]>(initial?.images || []);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+
+  const descriptionIsHtml = looksLikeHtml(initial?.description || "");
 
   async function onUpload(fileList: FileList | null) {
     if (!fileList?.length) return;
@@ -125,11 +112,14 @@ export function ProductForm({ mode, productId, collections, initial }: Props) {
         <span className="mb-1 block font-medium text-slate-700">Description</span>
         <textarea
           name="description"
-          rows={6}
-          defaultValue={toPlainDescription(initial?.description || "")}
-          className={inputClass}
-          placeholder="Write a short product description…"
+          rows={descriptionIsHtml ? 12 : 6}
+          defaultValue={initial?.description || ""}
+          className={`${inputClass} font-mono text-xs leading-relaxed`}
+          placeholder="Write a product description. Plain text is fine — or paste catalogue HTML."
         />
+        <span className="mt-1 block text-xs text-slate-500">
+          Plain text becomes paragraphs on the site. Catalogue HTML (tables/lists) is kept and rendered.
+        </span>
       </label>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -172,31 +162,52 @@ export function ProductForm({ mode, productId, collections, initial }: Props) {
         />
       </label>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="rounded-lg border border-slate-200 bg-slate-50/80 p-4 space-y-4">
+        <div>
+          <p className="text-sm font-semibold text-slate-800">Storefront options</p>
+          <p className="mt-0.5 text-xs text-slate-500">
+            These become the Wattage and Color temperature pickers (e.g. Warm light/3000K) on the product page.
+          </p>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium text-slate-700">Wattage</span>
+            <input
+              name="wattage"
+              defaultValue={initial?.wattage}
+              className={inputClass}
+              placeholder="e.g. 100, 150, 200"
+            />
+            <span className="mt-1 block text-xs text-slate-500">Comma-separated watts</span>
+          </label>
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium text-slate-700">Color temperature (Kelvin)</span>
+            <input
+              name="colorTemp"
+              defaultValue={initial?.colorTemp}
+              className={inputClass}
+              placeholder="e.g. 3000, 4000, 6500"
+            />
+            <span className="mt-1 block text-xs text-slate-500">
+              3000 = Warm · 4000 = Natural · 6500 = Daylight
+            </span>
+          </label>
+        </div>
+
         <label className="block text-sm">
-          <span className="mb-1 block font-medium text-slate-700">Wattage</span>
-          <input name="wattage" defaultValue={initial?.wattage} className={inputClass} placeholder="e.g. 12, 18" />
-        </label>
-        <label className="block text-sm">
-          <span className="mb-1 block font-medium text-slate-700">Color temperature</span>
+          <span className="mb-1 block font-medium text-slate-700">Style / shape (optional)</span>
           <input
-            name="colorTemp"
-            defaultValue={initial?.colorTemp}
+            name="options"
+            defaultValue={initial?.options}
             className={inputClass}
-            placeholder="e.g. 3000, 6500"
+            placeholder="e.g. Round, Square"
           />
+          <span className="mt-1 block text-xs text-slate-500">
+            Extra style choices combined with wattage and color temperature
+          </span>
         </label>
       </div>
-
-      <label className="block text-sm">
-        <span className="mb-1 block font-medium text-slate-700">Options (optional)</span>
-        <input
-          name="options"
-          defaultValue={initial?.options}
-          className={inputClass}
-          placeholder="e.g. Round, Square"
-        />
-      </label>
 
       <div>
         <span className="mb-2 block text-sm font-medium text-slate-700">Images</span>

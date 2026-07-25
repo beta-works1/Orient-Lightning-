@@ -4,6 +4,12 @@ import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/admin";
+import {
+  buildVariantsFromAdminFields,
+  normalizeProductDescription,
+  stripHtml,
+} from "@/lib/adminProductOptions";
+import type { ProductVariant } from "@/lib/types";
 
 function assertAdminEmail(email: string | undefined) {
   const admin = process.env.ADMIN_EMAIL?.trim().toLowerCase();
@@ -61,25 +67,10 @@ function slugify(input: string) {
     .replace(/^-|-$/g, "");
 }
 
-function toPlainText(input: string) {
-  return input
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<\/p>/gi, "\n\n")
-    .replace(/<\/div>/gi, "\n")
-    .replace(/<[^>]+>/g, "")
-    .replace(/&nbsp;/gi, " ")
-    .replace(/&amp;/gi, "&")
-    .replace(/&lt;/gi, "<")
-    .replace(/&gt;/gi, ">")
-    .replace(/&quot;/gi, '"')
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
-}
-
 function parseForm(formData: FormData) {
   const title = String(formData.get("title") || "").trim();
   const handle = String(formData.get("handle") || "").trim() || slugify(title);
-  const description = toPlainText(String(formData.get("description") || ""));
+  const description = normalizeProductDescription(String(formData.get("description") || ""));
   const priceRaw = String(formData.get("price") || "").trim();
   const compareRaw = String(formData.get("compareAtPrice") || "").trim();
   const productType = String(formData.get("productType") || "").trim();
@@ -92,7 +83,10 @@ function parseForm(formData: FormData) {
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
-  const optionsText = String(formData.get("options") || "").trim();
+  const styles = String(formData.get("options") || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
   const imagesRaw = String(formData.get("images") || "")
     .split("\n")
     .map((s) => s.trim())
@@ -126,7 +120,7 @@ function parseForm(formData: FormData) {
       status: status as "draft" | "published",
       wattage,
       colorTemp,
-      optionsText,
+      styles,
       images: imagesRaw,
       collectionHandles,
     },
@@ -169,9 +163,14 @@ export async function createProduct(
   if (existing) return { fieldErrors: { handle: "Handle already exists." } };
 
   const id = `admin_${Date.now()}`;
-  const options = data.optionsText
-    ? [{ name: "Options", values: data.optionsText.split(",").map((s) => s.trim()).filter(Boolean) }]
-    : [];
+  const { options, variants } = buildVariantsFromAdminFields({
+    productId: id,
+    price: data.price,
+    compareAtPrice: data.compareAtPrice,
+    wattages: data.wattage,
+    colorTemps: data.colorTemp,
+    styles: data.styles,
+  });
 
   const { error } = await sb.from("products").insert({
     id,
@@ -185,21 +184,12 @@ export async function createProduct(
     vendor: "Orient",
     status: data.status,
     images: data.images,
-    variants: [
-      {
-        id: `${id}_v0`,
-        title: "Default",
-        price: data.price,
-        compareAtPrice: data.compareAtPrice,
-        sku: "",
-        available: true,
-      },
-    ],
+    variants,
     options,
     tags: [],
     facets: { wattage: data.wattage, colorTemp: data.colorTemp },
     seo_title: data.title,
-    seo_description: data.description.slice(0, 160),
+    seo_description: stripHtml(data.description).slice(0, 160),
     published_at: data.status === "published" ? new Date().toISOString() : null,
     updated_at: new Date().toISOString(),
   });
@@ -232,9 +222,16 @@ export async function updateProduct(
     if (clash) return { fieldErrors: { handle: "Handle already exists." } };
   }
 
-  const options = data.optionsText
-    ? [{ name: "Options", values: data.optionsText.split(",").map((s) => s.trim()).filter(Boolean) }]
-    : [];
+  const existingVariants = (current.variants || []) as ProductVariant[];
+  const { options, variants } = buildVariantsFromAdminFields({
+    productId: id,
+    price: data.price,
+    compareAtPrice: data.compareAtPrice,
+    wattages: data.wattage,
+    colorTemps: data.colorTemp,
+    styles: data.styles,
+    existingVariants,
+  });
 
   const { error } = await sb
     .from("products")
@@ -248,20 +245,11 @@ export async function updateProduct(
       vendor: "Orient",
       status: data.status,
       images: data.images,
-      variants: [
-        {
-          id: `${id}_v0`,
-          title: "Default",
-          price: data.price,
-          compareAtPrice: data.compareAtPrice,
-          sku: current.sku || "",
-          available: true,
-        },
-      ],
+      variants,
       options,
       facets: { wattage: data.wattage, colorTemp: data.colorTemp },
       seo_title: data.title,
-      seo_description: data.description.slice(0, 160),
+      seo_description: stripHtml(data.description).slice(0, 160),
       published_at:
         data.status === "published"
           ? current.published_at ?? new Date().toISOString()

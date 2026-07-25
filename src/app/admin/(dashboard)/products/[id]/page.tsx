@@ -8,12 +8,37 @@ type Props = {
   searchParams: Promise<{ saved?: string }>;
 };
 
+function optionValues(
+  options: { name: string; values: string[] }[] | undefined,
+  match: RegExp,
+) {
+  const hit = options?.find((o) => match.test(o.name));
+  return hit?.values || [];
+}
+
 export default async function EditProductPage({ params, searchParams }: Props) {
   const { id } = await params;
   const sp = await searchParams;
   const product = await getProductById(id);
   if (!product) notFound();
   const collections = await getAllCollections();
+
+  const wattFromOptions = optionValues(product.options, /watt/i).map((v) =>
+    v.replace(/\s*watt$/i, "").trim(),
+  );
+  const tempFromOptions = optionValues(product.options, /color|temp|cct/i).map((v) =>
+    v.replace(/k$/i, "").trim(),
+  );
+  const styleFromOptions = optionValues(product.options, /style|shape|reflector/i);
+
+  const wattage = (product.facets?.wattage?.length
+    ? product.facets.wattage
+    : wattFromOptions
+  ).join(", ");
+  const colorTemp = (product.facets?.colorTemp?.length
+    ? product.facets.colorTemp
+    : tempFromOptions
+  ).join(", ");
 
   return (
     <div>
@@ -43,9 +68,9 @@ export default async function EditProductPage({ params, searchParams }: Props) {
           compareAtPrice: product.compareAtPrice,
           productType: product.productType || "",
           status: (product.status as "draft" | "published") || "published",
-          wattage: (product.facets?.wattage || []).join(", "),
-          colorTemp: (product.facets?.colorTemp || []).join(", "),
-          options: (product.options?.[0]?.values || []).join(", "),
+          wattage,
+          colorTemp,
+          options: styleFromOptions.join(", "),
           images: product.images,
           collectionHandles: product.collectionIds,
         }}
