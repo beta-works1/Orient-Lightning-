@@ -17,8 +17,9 @@ export async function updateSession(request: NextRequest) {
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
           supabaseResponse = NextResponse.next({ request });
+          // Prefer Supabase options last so signOut can set maxAge: 0 and clear cookies.
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, { ...options, ...authCookieOptions }),
+            supabaseResponse.cookies.set(name, value, { ...authCookieOptions, ...options }),
           );
         },
       },

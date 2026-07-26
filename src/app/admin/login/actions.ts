@@ -58,7 +58,11 @@ export async function loginAdmin(
     data: { user },
   } = await supabase.auth.getUser();
   if (!adminEmail || user?.email?.toLowerCase() !== adminEmail) {
-    await supabase.auth.signOut({ scope: "global" });
+    try {
+      await supabase.auth.signOut({ scope: "local" });
+    } catch {
+      /* ignore */
+    }
     return { error: "Invalid email or password." };
   }
 

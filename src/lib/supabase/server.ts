@@ -17,8 +17,9 @@ export async function createClient() {
         },
         setAll(cookiesToSet) {
           try {
+            // Prefer Supabase options last so signOut can set maxAge: 0 and clear cookies.
             cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, { ...options, ...authCookieOptions }),
+              cookieStore.set(name, value, { ...authCookieOptions, ...options }),
             );
           } catch {
             /* Called from a Server Component — middleware will refresh sessions. */
