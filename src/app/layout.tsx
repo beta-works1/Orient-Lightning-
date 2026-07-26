@@ -10,6 +10,7 @@ import { CompareBar } from "@/components/compare/CompareBar";
 import { IntroGate } from "@/components/IntroGate";
 import { MotionRoot } from "@/components/motion/MotionRoot";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
+import { ChatBot } from "@/components/ChatBot";
 import { SITE, SITE_URL } from "@/lib/types";
 import "./globals.css";
 
@@ -78,6 +79,7 @@ export default async function RootLayout({
                   <main className="min-h-[60vh] pb-24">{children}</main>
                   <Footer />
                   <CompareBar />
+                  <ChatBot />
                   <WhatsAppButton />
                 </IntroGate>
               </MotionRoot>

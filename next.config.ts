@@ -1,5 +1,8 @@
 import type { NextConfig } from "next";
 
+/** React Refresh / webpack HMR need eval in local `next dev` only. */
+const isDev = process.env.NODE_ENV !== "production";
+
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "X-Frame-Options", value: "DENY" },
@@ -23,8 +26,13 @@ const securityHeaders = [
       "img-src 'self' data: blob: https://*.supabase.co https://cdn.shopify.com https://orientlighting.com.pk https://*.tile.openstreetmap.org",
       "font-src 'self' data:",
       "style-src 'self' 'unsafe-inline'",
-      "script-src 'self' 'unsafe-inline'",
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.tile.openstreetmap.org",
+      // Dev: 'unsafe-eval' required by Next.js React Refresh. Prod stays strict.
+      isDev
+        ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
+        : "script-src 'self' 'unsafe-inline'",
+      isDev
+        ? "connect-src 'self' ws: wss: https://*.supabase.co wss://*.supabase.co https://*.tile.openstreetmap.org"
+        : "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.tile.openstreetmap.org",
       "worker-src 'self' blob:",
     ].join("; "),
   },

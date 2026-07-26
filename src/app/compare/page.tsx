@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getProductByHandle } from "@/lib/catalog";
+import { CompareAiSummary } from "@/components/compare/CompareAiSummary";
 import { CompareTable } from "@/components/compare/CompareTable";
 
 export const metadata: Metadata = {
@@ -58,7 +59,10 @@ export default async function ComparePage({ searchParams }: Props) {
           <CompareTable products={products} />
         </div>
       ) : (
-        <CompareTable products={products} />
+        <>
+          <CompareAiSummary handles={products.map((p) => p.handle)} />
+          <CompareTable products={products} />
+        </>
       )}
     </div>
   );
