@@ -122,7 +122,7 @@ export function sanitizeHtml(dirty: string): string {
   if (!dirty) return "";
 
   // Drop whole dangerous blocks early
-  let html = dirty
+  const html = dirty
     .replace(/<(script|style|iframe|object|embed|link|meta|form|input|button|textarea|select)[\s\S]*?<\/\1>/gi, "")
     .replace(/<\/?(script|style|iframe|object|embed|link|meta|form|input|button|textarea|select)\b[^>]*>/gi, "");
 
