@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { usePathname } from "next/navigation";
 import { ChatRichText } from "@/components/chat/ChatRichText";
+import { useCompare } from "@/components/compare/CompareProvider";
 import { WHATSAPP_URL } from "@/lib/types";
 
 type Msg = { role: "user" | "assistant"; content: string };
@@ -13,6 +15,9 @@ const STARTER: Msg = {
 };
 
 export function ChatBot() {
+  const pathname = usePathname();
+  const { items, ready } = useCompare();
+  const clearCompareBar = ready && items.length > 0 && pathname !== "/compare";
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [pending, setPending] = useState(false);
@@ -55,7 +60,13 @@ export function ChatBot() {
   }
 
   return (
-    <div className="fixed bottom-24 right-4 z-50 flex flex-col items-end gap-3 sm:bottom-28 sm:right-6">
+    <div
+      className={`fixed right-4 z-50 flex flex-col items-end gap-3 sm:right-6 ${
+        clearCompareBar
+          ? "bottom-40 sm:bottom-44"
+          : "bottom-24 sm:bottom-28"
+      }`}
+    >
       {open ? (
         <div
           className="flex h-[min(520px,70vh)] w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-brand-border bg-white shadow-2xl shadow-black/20"

@@ -1,6 +1,14 @@
+"use client";
+
+import { usePathname } from "next/navigation";
+import { useCompare } from "@/components/compare/CompareProvider";
 import { SITE, WHATSAPP_URL } from "@/lib/types";
 
 export function WhatsAppButton() {
+  const pathname = usePathname();
+  const { items, ready } = useCompare();
+  const clearCompareBar = ready && items.length > 0 && pathname !== "/compare";
+
   return (
     <a
       href={WHATSAPP_URL}
@@ -8,7 +16,11 @@ export function WhatsAppButton() {
       rel="noopener noreferrer"
       aria-label={`Chat with ${SITE.name} on WhatsApp`}
       title={`WhatsApp ${SITE.phoneDisplay}`}
-      className="group fixed bottom-6 right-4 z-50 flex items-center gap-2 rounded-full bg-[#25D366] py-3 pl-3.5 pr-4 text-white shadow-lg transition hover:bg-[#1ebe57] hover:shadow-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#25D366] sm:bottom-8 sm:right-6"
+      className={`group fixed right-4 z-50 flex items-center gap-2 rounded-full bg-[#25D366] py-3 pl-3.5 pr-4 text-white shadow-lg transition hover:bg-[#1ebe57] hover:shadow-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#25D366] sm:right-6 ${
+        clearCompareBar
+          ? "bottom-24 sm:bottom-28"
+          : "bottom-6 sm:bottom-8"
+      }`}
     >
       <svg
         viewBox="0 0 24 24"
