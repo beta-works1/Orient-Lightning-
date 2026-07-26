@@ -3,13 +3,22 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect } from "react";
 import { useCompare } from "./CompareProvider";
 
 export function CompareBar() {
   const { items, remove, clear, message, ready } = useCompare();
   const pathname = usePathname();
+  const visible = ready && items.length > 0 && pathname !== "/compare";
 
-  if (!ready || items.length === 0 || pathname === "/compare") return null;
+  // Lift Ask Orient / WhatsApp above this bar (read by .orient-fab-stack).
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty("--orient-fab-offset", visible ? "6.5rem" : "0px");
+    return () => root.style.setProperty("--orient-fab-offset", "0px");
+  }, [visible]);
+
+  if (!visible) return null;
 
   const href = `/compare?products=${items.map((i) => i.handle).join(",")}`;
 
