@@ -22,6 +22,8 @@ const securityHeaders = [
       "base-uri 'self'",
       "form-action 'self'",
       "frame-ancestors 'none'",
+      // Footer Google Maps embed (maps.google.com → www.google.com)
+      "frame-src 'self' https://maps.google.com https://www.google.com",
       "object-src 'none'",
       "img-src 'self' data: blob: https://*.supabase.co https://cdn.shopify.com https://orientlighting.com.pk https://*.tile.openstreetmap.org",
       "font-src 'self' data:",
