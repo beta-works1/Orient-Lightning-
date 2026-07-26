@@ -9,9 +9,9 @@ import { logoutAdmin } from "@/app/admin/logout";
 
 const NAV = [
   { href: "/admin/products", label: "Products" },
-  { href: "/admin/products/new", label: "Add product" },
   { href: "/admin/featured", label: "Featured" },
   { href: "/admin/catalogue", label: "Catalogue" },
+  { href: "/admin/products/new", label: "Add product" },
 ] as const;
 
 export function AdminShell({ children }: { children: ReactNode }) {
