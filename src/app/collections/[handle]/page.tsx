@@ -7,6 +7,7 @@ import {
   getCollectionByHandle,
   getProductsForCollection,
 } from "@/lib/catalog";
+import { sanitizeHtml } from "@/lib/sanitizeHtml";
 
 type Props = {
   params: Promise<{ handle: string }>;
@@ -101,7 +102,7 @@ export default async function CollectionPage({ params, searchParams }: Props) {
         {collection.description ? (
           <div
             className="prose-product mt-3 max-w-3xl text-sm text-brand-muted"
-            dangerouslySetInnerHTML={{ __html: collection.description }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(collection.description) }}
           />
         ) : (
           <p className="mt-2 text-sm text-brand-muted">

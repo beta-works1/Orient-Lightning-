@@ -12,6 +12,8 @@ import {
 import type { ProductVariant } from "@/lib/types";
 import type { CatalogueSetting } from "@/lib/catalogueSettings";
 import { logoutAdmin } from "@/app/admin/logout";
+import { detectFileKind, extForKind, mimeForKind } from "@/lib/fileMagic";
+import { sanitizeHtml } from "@/lib/sanitizeHtml";
 
 export { logoutAdmin };
 
@@ -68,7 +70,9 @@ function slugify(input: string) {
 function parseForm(formData: FormData) {
   const title = String(formData.get("title") || "").trim();
   const handle = String(formData.get("handle") || "").trim() || slugify(title);
-  const description = normalizeProductDescription(String(formData.get("description") || ""));
+  const description = sanitizeHtml(
+    normalizeProductDescription(String(formData.get("description") || "")),
+  );
   const priceRaw = String(formData.get("price") || "").trim();
   const compareRaw = String(formData.get("compareAtPrice") || "").trim();
   const productType = String(formData.get("productType") || "").trim();
@@ -292,28 +296,22 @@ export async function uploadProductImage(
   if (!(file instanceof File) || file.size === 0) {
     return { error: "Choose an image file." };
   }
-
-  const allowed = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"]);
-  if (!allowed.has(file.type)) {
-    return { error: "Only JPG, PNG, WebP, GIF, or AVIF images are allowed." };
-  }
   if (file.size > 5 * 1024 * 1024) {
     return { error: "Image must be under 5MB." };
   }
 
-  const extByType: Record<string, string> = {
-    "image/jpeg": "jpg",
-    "image/png": "png",
-    "image/webp": "webp",
-    "image/gif": "gif",
-    "image/avif": "avif",
-  };
-  const ext = extByType[file.type] || "jpg";
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const kind = detectFileKind(buffer);
+  if (!kind || kind === "pdf") {
+    return { error: "Only JPG, PNG, WebP, GIF, or AVIF images are allowed." };
+  }
+
+  const ext = extForKind(kind);
+  const contentType = mimeForKind(kind);
   const path = `uploads/${Date.now()}-${crypto.randomUUID()}.${ext}`;
   const sb = createServiceClient();
-  const buffer = Buffer.from(await file.arrayBuffer());
   const { error } = await sb.storage.from("product-images").upload(path, buffer, {
-    contentType: file.type,
+    contentType,
     upsert: false,
   });
   if (error) return { error: "Upload failed. Try again." };
@@ -353,15 +351,16 @@ export async function uploadCatalogue(
     return { error: "Choose a PDF file." };
   }
 
-  const isPdf =
-    file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
-  if (!isPdf) return { error: "Only PDF catalogues are allowed." };
   if (file.size > 25 * 1024 * 1024) return { error: "PDF must be under 25MB." };
+
+  const buffer = Buffer.from(await file.arrayBuffer());
+  if (detectFileKind(buffer) !== "pdf") {
+    return { error: "Only PDF catalogues are allowed." };
+  }
 
   const sb = createServiceClient();
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-") || "catalogue.pdf";
   const storagePath = `current/${Date.now()}-${safeName}`;
-  const buffer = Buffer.from(await file.arrayBuffer());
 
   const { error: uploadError } = await sb.storage.from("catalogues").upload(storagePath, buffer, {
     contentType: "application/pdf",

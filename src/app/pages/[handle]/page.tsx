@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getPage } from "@/lib/catalog";
+import { sanitizeHtml } from "@/lib/sanitizeHtml";
 
 type Props = { params: Promise<{ handle: string }> };
 
@@ -21,7 +22,7 @@ export default async function StaticPage({ params }: Props) {
       <h1 className="font-display text-3xl text-brand-navy sm:text-4xl">{page.title}</h1>
       <div
         className="prose-product mt-6 text-base"
-        dangerouslySetInnerHTML={{ __html: page.body }}
+        dangerouslySetInnerHTML={{ __html: sanitizeHtml(page.body) }}
       />
     </div>
   );

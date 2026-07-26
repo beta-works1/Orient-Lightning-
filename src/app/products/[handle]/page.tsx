@@ -5,6 +5,7 @@ import { ProductPurchase } from "@/components/ProductPurchase";
 import { ProductRail } from "@/components/ProductRail";
 import { getProductByHandle, getRelatedProducts } from "@/lib/catalog";
 import { getCatalogueDownload } from "@/lib/catalogueSettings";
+import { sanitizeHtml } from "@/lib/sanitizeHtml";
 
 type Props = { params: Promise<{ handle: string }> };
 
@@ -45,7 +46,7 @@ export default async function ProductPage({ params }: Props) {
           <h2 className="font-display text-2xl text-brand-navy">Description</h2>
           <div
             className="prose-product mt-4 max-w-3xl text-sm text-brand-charcoal"
-            dangerouslySetInnerHTML={{ __html: product.description }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(product.description) }}
           />
         </section>
       ) : null}

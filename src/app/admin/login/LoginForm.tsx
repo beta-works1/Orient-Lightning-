@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { useActionState } from "react";
+import { useSearchParams } from "next/navigation";
 import { InlineSpinner } from "@/components/admin/AnimatedLoader";
+import { loginAdmin, type LoginState } from "@/app/admin/login/actions";
+
+const initial: LoginState = {};
 
 function safeNext(raw: string | null): string {
   if (!raw) return "/admin/products";
@@ -14,39 +16,12 @@ function safeNext(raw: string | null): string {
 }
 
 export default function AdminLoginPage() {
-  const router = useRouter();
   const search = useSearchParams();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(
-    search.get("error") === "unauthorized"
-      ? "This account is not authorized for admin access."
-      : null,
-  );
-  const [loading, setLoading] = useState(false);
-
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-
-    const supabase = createClient();
-    const { error: signError } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    });
-
-    if (signError) {
-      setLoading(false);
-      // Generic message — do not leak whether email exists
-      setError("Invalid email or password.");
-      return;
-    }
-
-    // Middleware enforces ADMIN_EMAIL + signs out unauthorized sessions
-    router.replace(safeNext(search.get("next")));
-    router.refresh();
-  }
+  const [state, action, pending] = useActionState(loginAdmin, initial);
+  const unauthorized = search.get("error") === "unauthorized";
+  const error =
+    state.error ||
+    (unauthorized ? "This account is not authorized for admin access." : null);
 
   return (
     <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 py-10">
@@ -56,15 +31,15 @@ export default function AdminLoginPage() {
         </p>
         <h1 className="mt-1 text-xl font-bold text-slate-900">Admin sign in</h1>
         <p className="mt-1 text-sm text-slate-500">Manage products — add, edit, or delete.</p>
-        <form onSubmit={onSubmit} className="mt-6 space-y-4" autoComplete="on">
+        <form action={action} className="mt-6 space-y-4" autoComplete="on">
+          <input type="hidden" name="next" value={safeNext(search.get("next"))} />
           <label className="block text-sm">
             <span className="mb-1 block font-medium text-slate-700">Email</span>
             <input
               type="email"
+              name="email"
               required
               autoComplete="username"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
               className="w-full rounded-md border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-[#0F428F]"
             />
           </label>
@@ -72,10 +47,9 @@ export default function AdminLoginPage() {
             <span className="mb-1 block font-medium text-slate-700">Password</span>
             <input
               type="password"
+              name="password"
               required
               autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
               className="w-full rounded-md border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-[#0F428F]"
             />
           </label>
@@ -86,10 +60,10 @@ export default function AdminLoginPage() {
           ) : null}
           <button
             type="submit"
-            disabled={loading}
+            disabled={pending}
             className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-md bg-[#0F428F] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#162950] disabled:opacity-60"
           >
-            {loading ? (
+            {pending ? (
               <>
                 <InlineSpinner className="text-white" />
                 Signing in…

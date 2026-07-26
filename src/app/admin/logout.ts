@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 
 export async function logoutAdmin() {
   const supabase = await createClient();
-  await supabase.auth.signOut();
+  // Global scope invalidates refresh token server-side across devices/sessions
+  await supabase.auth.signOut({ scope: "global" });
   redirect("/admin/login");
 }

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import { getBlogPost } from "@/lib/catalog";
+import { sanitizeHtml } from "@/lib/sanitizeHtml";
 
 type Props = { params: Promise<{ handle: string }> };
 
@@ -28,7 +29,7 @@ export default async function BlogPostPage({ params }: Props) {
       ) : null}
       <div
         className="prose-product mt-8 text-base"
-        dangerouslySetInnerHTML={{ __html: post.body }}
+        dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.body) }}
       />
     </article>
   );
