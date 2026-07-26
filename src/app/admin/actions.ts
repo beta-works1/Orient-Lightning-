@@ -11,11 +11,8 @@ import {
 } from "@/lib/adminProductOptions";
 import type { ProductVariant } from "@/lib/types";
 import type { CatalogueSetting } from "@/lib/catalogueSettings";
-import { logoutAdmin } from "@/app/admin/logout";
 import { detectFileKind, extForKind, mimeForKind } from "@/lib/fileMagic";
 import { sanitizeHtml } from "@/lib/sanitizeHtml";
-
-export { logoutAdmin };
 
 function assertAdminEmail(email: string | undefined) {
   const admin = process.env.ADMIN_EMAIL?.trim().toLowerCase();

@@ -175,15 +175,21 @@ const cachedCollections = unstable_cache(fetchAllCollections, ["catalog-collecti
 /** Request-deduped published catalog (also cross-request cached). */
 export const getAllProducts = cache(async (opts?: { includeDrafts?: boolean }) => {
   if (opts?.includeDrafts) {
-    const sb = serviceClient();
-    const { data, error } = await sb.from("products").select(PRODUCT_SELECT);
-    if (error) throw new Error(`getAllProducts: ${error.message}`);
-    const rows = (data || []) as ProductRow[];
-    const handles = await handlesByProductId(
-      sb,
-      rows.map((r) => r.id),
-    );
-    return rows.map((row) => mapProduct(row, handles.get(row.id) ?? []));
+    try {
+      const sb = serviceClient();
+      const { data, error } = await sb.from("products").select(PRODUCT_SELECT);
+      if (error) throw new Error(`getAllProducts: ${error.message}`);
+      const rows = (data || []) as ProductRow[];
+      const handles = await handlesByProductId(
+        sb,
+        rows.map((r) => r.id),
+      );
+      return rows.map((row) => mapProduct(row, handles.get(row.id) ?? []));
+    } catch (err) {
+      // Missing service role / transient DB errors must not 500 the admin shell
+      console.error("[getAllProducts includeDrafts]", err);
+      return cachedPublishedProducts();
+    }
   }
   return cachedPublishedProducts();
 });

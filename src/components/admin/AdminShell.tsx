@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
 import { AdminNavProgress } from "@/components/admin/AdminNavProgress";
-import { logoutAdmin } from "@/app/admin/logout";
 
 const NAV = [
   { href: "/admin/products", label: "Products" },
@@ -78,7 +77,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
                 </a>
               </nav>
             </div>
-            <form action={logoutAdmin}>
+            <form action="/admin/logout" method="post">
               <button
                 type="submit"
                 className="min-h-[44px] rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm hover:bg-slate-50"

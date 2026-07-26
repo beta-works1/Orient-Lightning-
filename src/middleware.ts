@@ -53,6 +53,13 @@ export async function middleware(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-orient-admin", "1");
 
+  // Logout must not refresh/re-attach session cookies from updateSession
+  if (pathname === "/admin/logout") {
+    return withAdminSecurityHeaders(
+      NextResponse.next({ request: { headers: requestHeaders } }),
+    );
+  }
+
   const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
   const { supabase, supabaseResponse, user } = await updateSession(request);
 
@@ -70,7 +77,7 @@ export async function middleware(request: NextRequest) {
     }
     // Non-allowlisted session must not linger on admin login
     if (user && (!adminEmail || user.email?.toLowerCase() !== adminEmail)) {
-      await supabase.auth.signOut();
+      await supabase.auth.signOut({ scope: "local" });
     }
     const res = NextResponse.next({ request: { headers: requestHeaders } });
     return copyCookies(res);
@@ -85,7 +92,7 @@ export async function middleware(request: NextRequest) {
   }
 
   if (!adminEmail || user.email?.toLowerCase() !== adminEmail) {
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: "local" });
     const url = request.nextUrl.clone();
     url.pathname = "/admin/login";
     url.search = "";
