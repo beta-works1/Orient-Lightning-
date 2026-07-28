@@ -32,7 +32,7 @@ export function LampContainer({
           whileInView={{ opacity: 1, width: "30rem" }}
           viewport={{ once: true, amount: 0.25 }}
           transition={
-            reduce ? { duration: 0 } : { delay: 0.5, duration: 3.2, ease: "easeInOut" }
+            reduce ? { duration: 0 } : { delay: 0.25, duration: 1.9, ease: "easeInOut" }
           }
           style={{
             backgroundImage: `conic-gradient(var(--conic-position), var(--tw-gradient-stops))`,
@@ -49,7 +49,7 @@ export function LampContainer({
           whileInView={{ opacity: 1, width: "30rem" }}
           viewport={{ once: true, amount: 0.25 }}
           transition={
-            reduce ? { duration: 0 } : { delay: 0.5, duration: 3.2, ease: "easeInOut" }
+            reduce ? { duration: 0 } : { delay: 0.25, duration: 1.9, ease: "easeInOut" }
           }
           style={{
             backgroundImage: `conic-gradient(var(--conic-position), var(--tw-gradient-stops))`,
@@ -70,7 +70,7 @@ export function LampContainer({
           whileInView={{ width: "16rem" }}
           viewport={{ once: true, amount: 0.25 }}
           transition={
-            reduce ? { duration: 0 } : { delay: 0.8, duration: 3.2, ease: "easeInOut" }
+            reduce ? { duration: 0 } : { delay: 0.4, duration: 1.9, ease: "easeInOut" }
           }
           className="absolute inset-auto z-30 h-36 w-64 -translate-y-[6rem] rounded-full bg-gradient-to-r from-[#FFB84D] to-[#2F6FE0] blur-2xl"
         />
@@ -80,7 +80,7 @@ export function LampContainer({
           whileInView={{ width: "30rem" }}
           viewport={{ once: true, amount: 0.25 }}
           transition={
-            reduce ? { duration: 0 } : { delay: 0.8, duration: 3.2, ease: "easeInOut" }
+            reduce ? { duration: 0 } : { delay: 0.4, duration: 1.9, ease: "easeInOut" }
           }
           className="absolute inset-auto z-50 h-0.5 w-[30rem] -translate-y-[7rem] bg-gradient-to-r from-[#FFB84D] via-white to-[#2F6FE0]"
         />
