@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FOOTER_LINKS, SITE, WHATSAPP_URL } from "@/lib/types";
+import { FOOTER_LINKS, MAP_EMBED_URL, MAP_EXTERNAL_URL, SITE, WHATSAPP_URL } from "@/lib/types";
 import { NewsletterForm } from "./NewsletterForm";
 import { BrandLogo } from "@/components/BrandLogo";
 
@@ -31,15 +31,25 @@ export function Footer() {
           <p className="mt-2 text-sm text-brand-muted">{SITE.legalName}</p>
           <p className="mt-1 text-xs text-brand-muted">Legal entity: {SITE.entity}</p>
           <p className="mt-4 text-sm leading-relaxed text-brand-dark">{SITE.address}</p>
+          <p className="mt-1 text-xs text-brand-muted">{SITE.mapPlusCode}</p>
           <div className="mt-4 overflow-hidden rounded-md border border-brand-border">
             <iframe
               title="Orient Lighting location"
-              src="https://maps.google.com/maps?q=26km%20Multan%20Road%20Maraka%20Lahore&t=&z=14&ie=UTF8&iwloc=&output=embed"
+              src={MAP_EMBED_URL}
               className="h-40 w-full"
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
+              allowFullScreen
             />
           </div>
+          <a
+            href={MAP_EXTERNAL_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-2 inline-block text-xs font-semibold text-brand hover:text-brand-navy"
+          >
+            Open in Google Maps
+          </a>
         </div>
 
         <div>

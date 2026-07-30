@@ -79,6 +79,8 @@ export const SITE = {
   whatsapp: "923001674368",
   hours: "10AM–7PM Mon–Fri",
   address: "Gate #2, 26km Multan Rd, Maraka Village, Lahore, Punjab 54000",
+  /** Google Maps Plus Code for HQ / showroom pin */
+  mapPlusCode: "94PX+QF Lahore, Pakistan",
   darazUrl: "https://www.daraz.pk/shop/orient-lighting/",
   announcement: "Free shipping on orders above Rs. 5,000 · 1-year warranty on LED products",
   catalogueUrl: "/orient-lighting-catalogue.pdf",
@@ -86,6 +88,9 @@ export const SITE = {
 };
 
 export const WHATSAPP_URL = `https://wa.me/${SITE.whatsapp}`;
+
+export const MAP_EMBED_URL = `https://maps.google.com/maps?q=${encodeURIComponent(SITE.mapPlusCode)}&z=16&ie=UTF8&iwloc=&output=embed`;
+export const MAP_EXTERNAL_URL = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(SITE.mapPlusCode)}`;
 
 export const NAV = [
   {
