@@ -11,6 +11,7 @@ import { IntroGate } from "@/components/IntroGate";
 import { MotionRoot } from "@/components/motion/MotionRoot";
 import { ChatBot } from "@/components/ChatBot";
 import { SITE, SITE_URL } from "@/lib/types";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 const syne = Syne({
@@ -84,6 +85,7 @@ export default async function RootLayout({
             </>
           )}
         </CompareProvider>
+        <Analytics />
       </body>
     </html>
   );
