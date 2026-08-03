@@ -5,118 +5,78 @@ export type SendEmailInput = {
   subject: string;
   text: string;
   replyTo?: string;
-  /** Extra key/value fields for FormSubmit fallback body. */
-  fields?: Record<string, string>;
 };
 
-function notifyAddress(to: string | string[]): string {
-  const first = Array.isArray(to) ? to[0] : to;
-  return (process.env.PARTNER_NOTIFY_EMAIL || first || SITE.emailSales).trim();
-}
+export type SendEmailResult = {
+  ok: boolean;
+  provider?: "resend";
+  error?: string;
+  status?: number;
+};
 
-async function sendViaResend(input: SendEmailInput): Promise<boolean> {
+/**
+ * Send via Resend.
+ *
+ * Requires RESEND_API_KEY on Vercel.
+ * onboarding@resend.dev can ONLY send to your Resend account email.
+ * To reach sales@orientlighting.pk, verify orientlighting.com.pk (or a subdomain)
+ * in Resend Domains and set RESEND_FROM to an address on that domain, e.g.
+ *   Orient Lighting <noreply@orientlighting.com.pk>
+ */
+export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult> {
   const apiKey = process.env.RESEND_API_KEY?.trim();
-  if (!apiKey) return false;
+  if (!apiKey) {
+    const error = "RESEND_API_KEY is not set on this deployment.";
+    console.error("[email]", error);
+    return { ok: false, error };
+  }
 
   const from =
     process.env.RESEND_FROM?.trim() ||
     `${SITE.name} <onboarding@resend.dev>`;
 
-  const to = Array.isArray(input.to) ? input.to : [input.to];
+  const to = (Array.isArray(input.to) ? input.to : [input.to])
+    .map((addr) => addr.trim())
+    .filter(Boolean);
 
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from,
-      to,
-      subject: input.subject,
-      text: input.text,
-      reply_to: input.replyTo || undefined,
-    }),
-  });
+  if (!to.length) {
+    return { ok: false, error: "No recipient address." };
+  }
 
-  if (!res.ok) {
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from,
+        to,
+        subject: input.subject,
+        text: input.text,
+        reply_to: input.replyTo || undefined,
+      }),
+    });
+
     const body = await res.text().catch(() => "");
-    console.error("[email] Resend error:", res.status, body);
-    return false;
-  }
-  return true;
-}
-
-/**
- * FormSubmit fallback — no API key required.
- * First submission sends an activation email to the inbox; click Activate once.
- */
-async function sendViaFormSubmit(input: SendEmailInput): Promise<boolean> {
-  const to = notifyAddress(input.to);
-  if (!to) return false;
-
-  const site =
-    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
-    "https://orientlighting.com.pk";
-
-  const payload: Record<string, string> = {
-    _subject: input.subject,
-    _template: "table",
-    message: input.text,
-    ...(input.fields || {}),
-  };
-  if (input.replyTo) {
-    payload.email = input.replyTo;
-    payload._replyto = input.replyTo;
-  }
-
-  const res = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(to)}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-      Origin: site,
-      Referer: `${site}/pages/become-our-partner`,
-    },
-    body: JSON.stringify(payload),
-  });
-
-  const body = await res.text().catch(() => "");
-  if (!res.ok) {
-    console.error("[email] FormSubmit error:", res.status, body);
-    return false;
-  }
-
-  try {
-    const json = JSON.parse(body) as { success?: string | boolean; message?: string };
-    if (json.success === false || json.success === "false") {
-      console.error("[email] FormSubmit rejected:", json.message || body);
-      return false;
+    if (!res.ok) {
+      let detail = body;
+      try {
+        const json = JSON.parse(body) as { message?: string; name?: string };
+        detail = json.message || json.name || body;
+      } catch {
+        // keep raw body
+      }
+      const error = `Resend ${res.status}: ${detail}`;
+      console.error("[email]", error, { from, to });
+      return { ok: false, provider: "resend", status: res.status, error };
     }
-    if (json.message && /activation/i.test(json.message)) {
-      console.warn("[email] FormSubmit needs inbox activation for", to, json.message);
-      return false;
-    }
-  } catch {
-    // ignore non-JSON
-  }
-  return true;
-}
 
-/**
- * Prefer Resend when RESEND_API_KEY is set; otherwise FormSubmit.co fallback.
- */
-export async function sendEmail(input: SendEmailInput): Promise<boolean> {
-  try {
-    if (await sendViaResend(input)) return true;
+    return { ok: true, provider: "resend", status: res.status };
   } catch (err) {
-    console.error("[email] Resend failed:", err);
-  }
-
-  try {
-    return await sendViaFormSubmit(input);
-  } catch (err) {
-    console.error("[email] FormSubmit failed:", err);
-    return false;
+    const error = err instanceof Error ? err.message : "Network error talking to Resend";
+    console.error("[email] Resend request failed:", error);
+    return { ok: false, provider: "resend", error };
   }
 }
