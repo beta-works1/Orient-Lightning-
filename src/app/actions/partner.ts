@@ -140,6 +140,21 @@ export async function submitPartnerApplication(
     subject: `Partner application — ${data.company_name}`,
     text,
     replyTo: data.email_address,
+    fields: {
+      company_name: data.company_name,
+      contact_person_name: data.contact_person_name,
+      designation: data.designation,
+      mobile_number: data.mobile_number,
+      email_address: data.email_address,
+      city: data.city,
+      business_type: data.business_type,
+      years_in_business: data.years_in_business,
+      led_experience: data.led_experience,
+      areas_served: data.areas_served,
+      average_sales_revenue: data.average_sales_revenue,
+      why_partner: data.why_partner,
+      additional_comments: data.additional_comments || "—",
+    },
   });
 
   if (!emailResult.ok) {
@@ -147,7 +162,13 @@ export async function submitPartnerApplication(
       to: notifyTo,
       error: emailResult.error,
       status: emailResult.status,
+      provider: emailResult.provider,
     });
+    return {
+      ok: false,
+      message:
+        "Your application was saved, but we could not email the sales team. Please WhatsApp us or try again in a minute.",
+    };
   }
 
   return {

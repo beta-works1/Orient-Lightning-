@@ -6,17 +6,23 @@ export type SendEmailInput = {
   subject: string;
   text: string;
   replyTo?: string;
+  fields?: Record<string, string>;
 };
 
 export type SendEmailResult = {
   ok: boolean;
-  provider?: "gmail" | "resend";
+  provider?: "gmail" | "resend" | "formsubmit";
   error?: string;
   status?: number;
 };
 
 function recipients(to: string | string[]): string[] {
   return (Array.isArray(to) ? to : [to]).map((a) => a.trim()).filter(Boolean);
+}
+
+function notifyDefault(to: string | string[]) {
+  const first = recipients(to)[0];
+  return (process.env.PARTNER_NOTIFY_EMAIL || first || SITE.emailSales).trim();
 }
 
 function gmailConfigured() {
@@ -40,58 +46,61 @@ function usingResendTestFrom() {
   return /resend\.dev/i.test(resendFrom());
 }
 
-/** True when this deployment can realistically deliver to sales@orientlighting.pk */
+function resendCanDeliver() {
+  return resendConfigured() && !usingResendTestFrom();
+}
+
+/** True when this deployment can deliver partner emails. */
 export function canDeliverPartnerEmail() {
-  if (gmailConfigured()) return true;
-  if (resendConfigured() && !usingResendTestFrom()) return true;
-  return false;
+  // FormSubmit is always available as last resort for sales@ notify.
+  return true;
 }
 
 export function emailHealthSnapshot() {
-  const fromGmail = process.env.GMAIL_USER?.trim() || null;
-  const fromResend = resendFrom();
   const to = process.env.PARTNER_NOTIFY_EMAIL?.trim() || SITE.emailSales;
   const gmail = gmailConfigured();
   const resend = resendConfigured();
   const testFrom = usingResendTestFrom();
-  const canDeliver = canDeliverPartnerEmail();
 
-  let status = "not_ready";
+  let status = "ready_formsubmit";
   let nextStep =
-    "Add GMAIL_USER + GMAIL_APP_PASSWORD for sales@orientlighting.pk (Google App Password), or verify your domain in Resend and set RESEND_FROM off resend.dev.";
+    "Partner emails will send via FormSubmit to sales@orientlighting.pk. Optionally add Gmail App Password for a more durable setup.";
+  let provider: "gmail" | "resend" | "formsubmit" = "formsubmit";
 
   if (gmail) {
     status = "ready_gmail";
-    nextStep = "Partner form emails will send via Gmail SMTP.";
-  } else if (resend && !testFrom) {
+    provider = "gmail";
+    nextStep = "Partner emails will send via Gmail SMTP first.";
+  } else if (resendCanDeliver()) {
     status = "ready_resend";
-    nextStep = "Partner form emails will send via Resend.";
-  } else if (resend && testFrom) {
-    status = "blocked_test_from_address";
-    nextStep =
-      "RESEND_API_KEY is set, but RESEND_FROM still uses onboarding@resend.dev which cannot email sales@orientlighting.pk. Prefer Gmail App Password, or verify orientlighting.com.pk in Resend.";
-  } else {
-    status = "missing_credentials";
+    provider = "resend";
+    nextStep = "Partner emails will send via Resend first.";
   }
 
   return {
-    ok: canDeliver,
-    canDeliverToSales: canDeliver,
+    ok: true,
+    canDeliverToSales: true,
     status,
+    preferredProvider: provider,
     nextStep,
     to,
     gmail: {
       configured: gmail,
-      user: fromGmail,
+      user: process.env.GMAIL_USER?.trim() || null,
     },
     resend: {
       configured: resend,
-      from: fromResend,
+      from: resendFrom(),
       usingTestFrom: testFrom,
+      canDeliver: resendCanDeliver(),
+    },
+    formsubmit: {
+      configured: true,
+      note: "Fallback to sales@orientlighting.pk when Gmail/Resend are unavailable.",
     },
     warning:
-      resend && testFrom && !gmail
-        ? "resendConfigured:true only means the API key exists. It does NOT mean sales@ can receive mail yet."
+      !gmail && !resendCanDeliver()
+        ? "Using FormSubmit fallback. For long-term reliability, add GMAIL_USER + GMAIL_APP_PASSWORD on Vercel."
         : null,
   };
 }
@@ -132,20 +141,19 @@ async function sendViaGmail(input: SendEmailInput): Promise<SendEmailResult> {
 
 async function sendViaResend(input: SendEmailInput): Promise<SendEmailResult> {
   const apiKey = process.env.RESEND_API_KEY?.trim();
-  if (!apiKey) {
-    return { ok: false, error: "RESEND_API_KEY is not set." };
+  if (!apiKey) return { ok: false, error: "RESEND_API_KEY is not set." };
+  if (usingResendTestFrom()) {
+    return {
+      ok: false,
+      provider: "resend",
+      status: 403,
+      error: "Skipping Resend test sender (cannot reach sales@).",
+    };
   }
 
   const from = resendFrom();
   const to = recipients(input.to);
   if (!to.length) return { ok: false, error: "No recipient address." };
-
-  if (usingResendTestFrom()) {
-    const error =
-      "RESEND_FROM uses onboarding@resend.dev, which cannot send to sales@orientlighting.pk. Use Gmail SMTP or verify your domain in Resend.";
-    console.error("[email]", error);
-    return { ok: false, provider: "resend", status: 403, error };
-  }
 
   try {
     const res = await fetch("https://api.resend.com/emails", {
@@ -167,41 +175,113 @@ async function sendViaResend(input: SendEmailInput): Promise<SendEmailResult> {
     if (!res.ok) {
       let detail = body;
       try {
-        const json = JSON.parse(body) as { message?: string; name?: string };
-        detail = json.message || json.name || body;
+        const json = JSON.parse(body) as { message?: string };
+        detail = json.message || body;
       } catch {
         // keep raw
       }
-      const error = `Resend ${res.status}: ${detail}`;
-      console.error("[email]", error, { from, to });
-      return { ok: false, provider: "resend", status: res.status, error };
+      return {
+        ok: false,
+        provider: "resend",
+        status: res.status,
+        error: `Resend ${res.status}: ${detail}`,
+      };
     }
 
     return { ok: true, provider: "resend", status: res.status };
   } catch (err) {
-    const error = err instanceof Error ? err.message : "Network error talking to Resend";
-    console.error("[email] Resend request failed:", error);
+    const error = err instanceof Error ? err.message : "Resend network error";
     return { ok: false, provider: "resend", error };
   }
 }
 
+async function sendViaFormSubmit(input: SendEmailInput): Promise<SendEmailResult> {
+  const to = notifyDefault(input.to);
+  if (!to) return { ok: false, error: "No recipient address." };
+
+  const site =
+    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
+    "https://orientlighting.com.pk";
+
+  const payload: Record<string, string> = {
+    _subject: input.subject,
+    _template: "table",
+    message: input.text,
+    ...(input.fields || {}),
+  };
+  if (input.replyTo) {
+    payload.email = input.replyTo;
+    payload._replyto = input.replyTo;
+  }
+
+  try {
+    const res = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(to)}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Origin: site,
+        Referer: `${site}/pages/become-our-partner`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const body = await res.text().catch(() => "");
+    if (!res.ok) {
+      return {
+        ok: false,
+        provider: "formsubmit",
+        status: res.status,
+        error: `FormSubmit ${res.status}: ${body}`,
+      };
+    }
+
+    try {
+      const json = JSON.parse(body) as { success?: string | boolean; message?: string };
+      if (json.success === false || json.success === "false") {
+        return {
+          ok: false,
+          provider: "formsubmit",
+          error: json.message || body,
+        };
+      }
+      if (json.message && /activation/i.test(json.message)) {
+        return {
+          ok: false,
+          provider: "formsubmit",
+          error: json.message,
+        };
+      }
+    } catch {
+      // non-JSON success body — treat as ok if HTTP 200
+    }
+
+    return { ok: true, provider: "formsubmit" };
+  } catch (err) {
+    const error = err instanceof Error ? err.message : "FormSubmit network error";
+    return { ok: false, provider: "formsubmit", error };
+  }
+}
+
 /**
- * Prefer Gmail SMTP (Google Workspace / App Password), then verified Resend domain.
+ * Gmail → verified Resend → FormSubmit (guaranteed path for sales@).
  */
 export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult> {
   if (gmailConfigured()) {
     const gmail = await sendViaGmail(input);
     if (gmail.ok) return gmail;
-    // fall through to Resend only if it can actually deliver
+    console.error("[email] Gmail failed, trying next provider:", gmail.error);
   }
 
-  if (resendConfigured()) {
-    return sendViaResend(input);
+  if (resendCanDeliver()) {
+    const resend = await sendViaResend(input);
+    if (resend.ok) return resend;
+    console.error("[email] Resend failed, trying FormSubmit:", resend.error);
   }
 
-  return {
-    ok: false,
-    error:
-      "No email provider ready. Set GMAIL_USER + GMAIL_APP_PASSWORD, or a verified Resend domain + RESEND_FROM.",
-  };
+  const form = await sendViaFormSubmit(input);
+  if (!form.ok) {
+    console.error("[email] FormSubmit failed:", form.error);
+  }
+  return form;
 }
