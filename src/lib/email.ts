@@ -206,6 +206,7 @@ async function sendViaFormSubmit(input: SendEmailInput): Promise<SendEmailResult
   const payload: Record<string, string> = {
     _subject: input.subject,
     _template: "table",
+    _captcha: "false",
     message: input.text,
     ...(input.fields || {}),
   };
@@ -222,6 +223,8 @@ async function sendViaFormSubmit(input: SendEmailInput): Promise<SendEmailResult
         Accept: "application/json",
         Origin: site,
         Referer: `${site}/pages/become-our-partner`,
+        "User-Agent":
+          "Mozilla/5.0 (compatible; OrientLightingBot/1.0; +https://orientlighting.com.pk)",
       },
       body: JSON.stringify(payload),
     });

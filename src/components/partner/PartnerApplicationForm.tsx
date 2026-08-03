@@ -1,15 +1,45 @@
 "use client";
 
-import { useActionState, type ReactNode } from "react";
+import { useActionState, useEffect, useRef, type ReactNode } from "react";
 import {
   submitPartnerApplication,
   type PartnerFormState,
 } from "@/app/actions/partner";
+import { SITE } from "@/lib/types";
 
 const initial: PartnerFormState = { ok: false, message: "" };
 
 const inputClass =
   "w-full rounded-md border border-brand-border bg-white px-3 py-2.5 text-sm text-brand-navy outline-none transition focus:border-brand focus:shadow-[0_0_0_3px_rgba(15,66,143,0.12)]";
+
+const SALES_NOTIFY = SITE.emailSales;
+
+async function notifySalesFromBrowser(payload: Record<string, string>) {
+  const res = await fetch(
+    `https://formsubmit.co/ajax/${encodeURIComponent(SALES_NOTIFY)}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        ...payload,
+        _captcha: "false",
+      }),
+    },
+  );
+  if (!res.ok) {
+    throw new Error(`FormSubmit HTTP ${res.status}`);
+  }
+  const json = (await res.json().catch(() => null)) as {
+    success?: string | boolean;
+    message?: string;
+  } | null;
+  if (json && (json.success === false || json.success === "false")) {
+    throw new Error(json.message || "FormSubmit rejected");
+  }
+}
 
 function Field({
   label,
@@ -40,6 +70,18 @@ function Field({
 
 export function PartnerApplicationForm() {
   const [state, action, pending] = useActionState(submitPartnerApplication, initial);
+  const emailedRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!state.ok || !state.notifyPayload) return;
+    const key = `${state.notifyPayload.email_address}|${state.notifyPayload.company_name}|${state.notifyPayload._subject}`;
+    if (emailedRef.current === key) return;
+    emailedRef.current = key;
+
+    void notifySalesFromBrowser(state.notifyPayload).catch((err) => {
+      console.error("[partner] browser notify failed:", err);
+    });
+  }, [state]);
 
   if (state.ok) {
     return (

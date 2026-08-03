@@ -9,6 +9,8 @@ export type PartnerFormState = {
   ok: boolean;
   message: string;
   fieldErrors?: Record<string, string>;
+  /** Browser sends this to FormSubmit (Vercel server IPs are often blocked). */
+  notifyPayload?: Record<string, string>;
 };
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -135,44 +137,48 @@ export async function submitPartnerApplication(
   const notifyTo =
     process.env.PARTNER_NOTIFY_EMAIL?.trim() || SITE.emailSales;
 
+  const notifyPayload: Record<string, string> = {
+    _subject: `Partner application — ${data.company_name}`,
+    _template: "table",
+    _captcha: "false",
+    message: text,
+    company_name: data.company_name,
+    contact_person_name: data.contact_person_name,
+    designation: data.designation,
+    mobile_number: data.mobile_number,
+    email_address: data.email_address,
+    city: data.city,
+    business_type: data.business_type,
+    years_in_business: data.years_in_business,
+    led_experience: data.led_experience,
+    areas_served: data.areas_served,
+    average_sales_revenue: data.average_sales_revenue,
+    why_partner: data.why_partner,
+    additional_comments: data.additional_comments || "—",
+    email: data.email_address,
+    _replyto: data.email_address,
+  };
+
+  // Best-effort server send (may fail on Vercel → FormSubmit). Browser retries via notifyPayload.
   const emailResult = await sendEmail({
     to: notifyTo,
-    subject: `Partner application — ${data.company_name}`,
+    subject: notifyPayload._subject,
     text,
     replyTo: data.email_address,
-    fields: {
-      company_name: data.company_name,
-      contact_person_name: data.contact_person_name,
-      designation: data.designation,
-      mobile_number: data.mobile_number,
-      email_address: data.email_address,
-      city: data.city,
-      business_type: data.business_type,
-      years_in_business: data.years_in_business,
-      led_experience: data.led_experience,
-      areas_served: data.areas_served,
-      average_sales_revenue: data.average_sales_revenue,
-      why_partner: data.why_partner,
-      additional_comments: data.additional_comments || "—",
-    },
+    fields: notifyPayload,
   });
 
   if (!emailResult.ok) {
-    console.error("[partner] Application saved but email notify failed:", {
+    console.error("[partner] Server email failed (browser will retry):", {
       to: notifyTo,
       error: emailResult.error,
-      status: emailResult.status,
       provider: emailResult.provider,
     });
-    return {
-      ok: false,
-      message:
-        "Your application was saved, but we could not email the sales team. Please WhatsApp us or try again in a minute.",
-    };
   }
 
   return {
     ok: true,
     message: "Thank you — your application was submitted. Our sales team will contact you soon.",
+    notifyPayload,
   };
 }
