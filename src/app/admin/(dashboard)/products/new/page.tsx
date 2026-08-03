@@ -1,10 +1,8 @@
 import Link from "next/link";
-import { getAllCollections } from "@/lib/catalog";
 import { ProductForm } from "@/components/admin/ProductForm";
+import { ADMIN_PRODUCT_COLLECTIONS } from "@/lib/types";
 
-export default async function NewProductPage() {
-  const collections = await getAllCollections();
-
+export default function NewProductPage() {
   return (
     <div>
       <div className="mb-4 flex items-center gap-3">
@@ -16,10 +14,7 @@ export default async function NewProductPage() {
         </Link>
       </div>
       <h1 className="mb-4 text-2xl font-bold text-white drop-shadow">New product</h1>
-      <ProductForm
-        mode="create"
-        collections={collections.map((c) => ({ handle: c.handle, title: c.title }))}
-      />
+      <ProductForm mode="create" collections={[...ADMIN_PRODUCT_COLLECTIONS]} />
     </div>
   );
 }

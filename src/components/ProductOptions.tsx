@@ -160,6 +160,16 @@ export function ProductOptions({
     return map;
   }, [catalogue]);
 
+  const sizeByWatt = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const p of parsed) {
+      const watt = p.wattage;
+      const size = p.variant.size?.trim();
+      if (watt && size && !map.has(watt)) map.set(watt, size);
+    }
+    return map;
+  }, [parsed]);
+
   const [sel, setSel] = useState<OptionSelections>(() => initialSelections(parsed));
 
   useEffect(() => {
@@ -327,18 +337,25 @@ export function ProductOptions({
         <OptionGroup label="Wattage">
           {watts.map((w) => {
             const lm = lumenByWatt.get(w);
+            const size = sizeByWatt.get(w);
+            const hint = [lm, size ? `Size: ${size}` : null].filter(Boolean).join(" · ") || undefined;
             return (
               <Chip
                 key={w}
                 active={sel.wattage === w}
                 onClick={() => pick("wattage", w)}
-                hint={lm || undefined}
+                hint={hint}
               >
                 <span className="inline-flex flex-col items-start leading-tight">
                   <span>{w}W</span>
                   {lm ? (
                     <span className={`text-[10px] ${sel.wattage === w ? "text-white/80" : "text-brand-muted"}`}>
                       {lm}
+                    </span>
+                  ) : null}
+                  {size ? (
+                    <span className={`text-[10px] ${sel.wattage === w ? "text-white/80" : "text-brand-muted"}`}>
+                      {size}
                     </span>
                   ) : null}
                 </span>

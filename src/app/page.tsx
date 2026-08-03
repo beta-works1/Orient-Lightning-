@@ -8,7 +8,6 @@ import {
 } from "@/components/landing/LandingSections";
 import { FindYourFit } from "@/components/landing/FindYourFit";
 import { ProductRail } from "@/components/ProductRail";
-import { FindAStoreCta } from "@/components/stores/FindAStoreCta";
 import { Reveal, MotionLink } from "@/components/motion/Reveal";
 import { getFeaturedProducts, getPublishedProductCount } from "@/lib/catalog";
 import { getCatalogueDownload } from "@/lib/catalogueSettings";
@@ -64,9 +63,6 @@ export default async function HomePage() {
             href={featuredMeta.viewAllHref}
           />
         </div>
-      </Reveal>
-      <Reveal>
-        <FindAStoreCta />
       </Reveal>
       <Reveal>
         <FindYourFit />

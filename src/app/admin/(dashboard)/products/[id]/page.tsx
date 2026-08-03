@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getAllCollections, getProductById } from "@/lib/catalog";
+import { getProductById } from "@/lib/catalog";
 import { ProductForm } from "@/components/admin/ProductForm";
+import { wattagePricesFromVariants, wattageSizesFromVariants } from "@/lib/adminProductOptions";
+import { ADMIN_PRODUCT_COLLECTIONS } from "@/lib/types";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -21,7 +23,6 @@ export default async function EditProductPage({ params, searchParams }: Props) {
   const sp = await searchParams;
   const product = await getProductById(id);
   if (!product) notFound();
-  const collections = await getAllCollections();
 
   const wattFromOptions = optionValues(product.options, /watt/i).map((v) =>
     v.replace(/\s*watt$/i, "").trim(),
@@ -31,14 +32,17 @@ export default async function EditProductPage({ params, searchParams }: Props) {
   );
   const styleFromOptions = optionValues(product.options, /style|shape|reflector/i);
 
-  const wattage = (product.facets?.wattage?.length
+  const wattTokens = product.facets?.wattage?.length
     ? product.facets.wattage
-    : wattFromOptions
-  ).join(", ");
+    : wattFromOptions;
+  const wattage = wattTokens.join(", ");
   const colorTemp = (product.facets?.colorTemp?.length
     ? product.facets.colorTemp
     : tempFromOptions
   ).join(", ");
+
+  const wattagePrices = wattagePricesFromVariants(product.variants, wattTokens);
+  const wattageSizes = wattageSizesFromVariants(product.variants, wattTokens);
 
   return (
     <div>
@@ -59,7 +63,7 @@ export default async function EditProductPage({ params, searchParams }: Props) {
       <ProductForm
         mode="edit"
         productId={product.id}
-        collections={collections.map((c) => ({ handle: c.handle, title: c.title }))}
+        collections={[...ADMIN_PRODUCT_COLLECTIONS]}
         initial={{
           title: product.title,
           handle: product.handle,
@@ -73,6 +77,8 @@ export default async function EditProductPage({ params, searchParams }: Props) {
           options: styleFromOptions.join(", "),
           images: product.images,
           collectionHandles: product.collectionIds,
+          wattagePrices,
+          wattageSizes,
         }}
       />
     </div>

@@ -8,6 +8,8 @@ export type ProductVariant = {
   option1?: string | null;
   option2?: string | null;
   option3?: string | null;
+  /** Optional physical size/length for this wattage (e.g. "2 ft", "600mm"). */
+  size?: string | null;
 };
 
 export type Product = {
@@ -161,14 +163,17 @@ export const CATEGORY_TILES = [
   },
 ] as const;
 
+/** Admin product form: only the 8 Shop-by-Category collections. */
+export const ADMIN_PRODUCT_COLLECTIONS = CATEGORY_TILES.map((tile) => ({
+  handle: tile.href.replace("/collections/", ""),
+  title: tile.label,
+}));
+
 export const FOOTER_LINKS = [
   { label: "Find a Store", href: "/stores" },
   { label: "Become Our Partner", href: "/pages/become-our-partner" },
   { label: "Terms & Services", href: "/pages/terms-and-conditions" },
-  { label: "Privacy Policy", href: "/pages/privacy-policy" },
-  { label: "Return & Exchange", href: "/pages/return-exchange" },
   { label: "Warranty & Claim", href: "/pages/warranty-claim" },
-  { label: "Blog", href: "/blogs/orient-lighting" },
 ] as const;
 
 export const TRUST_BADGES = [

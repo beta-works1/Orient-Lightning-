@@ -7,7 +7,10 @@ import { createServiceClient } from "@/lib/supabase/admin";
 import {
   buildVariantsFromAdminFields,
   normalizeProductDescription,
+  resolveListPrice,
   stripHtml,
+  type WattagePriceMap,
+  type WattageSizeMap,
 } from "@/lib/adminProductOptions";
 import type { ProductVariant } from "@/lib/types";
 import type { CatalogueSetting } from "@/lib/catalogueSettings";
@@ -107,19 +110,53 @@ function parseForm(formData: FormData) {
     }
   }
 
+  const wattagePrices: WattagePriceMap = {};
+  const wattageSizes: WattageSizeMap = {};
+  for (const watt of wattage) {
+    const key = watt.match(/(\d+(?:\.\d+)?)/)?.[1];
+    if (!key) continue;
+    const numKey = String(Number(key));
+    const sizeRaw = String(formData.get(`watt_size_${numKey}`) || "").trim();
+    if (sizeRaw) wattageSizes[numKey] = sizeRaw;
+
+    const wattPriceRaw = String(formData.get(`watt_price_${numKey}`) || "").trim();
+    if (!wattPriceRaw) continue;
+    const wattPrice = Number(wattPriceRaw);
+    if (Number.isNaN(wattPrice) || wattPrice <= 0) {
+      fieldErrors[`watt_price_${numKey}`] = `Price for ${numKey}W must be a positive number.`;
+      continue;
+    }
+    let wattCompare: number | null = null;
+    const wattCompareRaw = String(formData.get(`watt_compare_${numKey}`) || "").trim();
+    if (wattCompareRaw) {
+      wattCompare = Number(wattCompareRaw);
+      if (Number.isNaN(wattCompare) || wattCompare < 0) {
+        fieldErrors[`watt_compare_${numKey}`] = `Was price for ${numKey}W must be a number.`;
+        continue;
+      }
+    }
+    wattagePrices[numKey] = { price: wattPrice, compareAtPrice: wattCompare };
+  }
+
+  const listPrice =
+    Number.isFinite(price) && price > 0 ? resolveListPrice(price, wattagePrices) : price;
+
   return {
     fieldErrors,
     data: {
       title,
       handle,
       description,
-      price,
+      price: listPrice,
+      basePrice: Number.isFinite(price) && price > 0 ? price : listPrice,
       compareAtPrice,
       productType,
       status: status as "draft" | "published",
       wattage,
       colorTemp,
       styles,
+      wattagePrices,
+      wattageSizes,
       images: imagesRaw,
       collectionHandles,
     },
@@ -164,11 +201,13 @@ export async function createProduct(
   const id = `admin_${Date.now()}`;
   const { options, variants } = buildVariantsFromAdminFields({
     productId: id,
-    price: data.price,
+    price: data.basePrice,
     compareAtPrice: data.compareAtPrice,
     wattages: data.wattage,
     colorTemps: data.colorTemp,
     styles: data.styles,
+    wattagePrices: data.wattagePrices,
+    wattageSizes: data.wattageSizes,
   });
 
   const { error } = await sb.from("products").insert({
@@ -224,11 +263,13 @@ export async function updateProduct(
   const existingVariants = (current.variants || []) as ProductVariant[];
   const { options, variants } = buildVariantsFromAdminFields({
     productId: id,
-    price: data.price,
+    price: data.basePrice,
     compareAtPrice: data.compareAtPrice,
     wattages: data.wattage,
     colorTemps: data.colorTemp,
     styles: data.styles,
+    wattagePrices: data.wattagePrices,
+    wattageSizes: data.wattageSizes,
     existingVariants,
   });
 

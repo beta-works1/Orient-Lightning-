@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useActionState, useState } from "react";
+import { useActionState, useMemo, useState } from "react";
 import {
   createProduct,
   updateProduct,
@@ -12,6 +12,9 @@ import { InlineSpinner } from "@/components/admin/AnimatedLoader";
 import { looksLikeHtml } from "@/lib/adminProductOptions";
 
 type CollectionOption = { handle: string; title: string };
+
+type WattPriceInitial = Record<string, { price: number; compareAtPrice: number | null }>;
+type WattSizeInitial = Record<string, string>;
 
 type Props = {
   mode: "create" | "edit";
@@ -30,12 +33,28 @@ type Props = {
     options: string;
     images: string[];
     collectionHandles: string[];
+    wattagePrices?: WattPriceInitial;
+    wattageSizes?: WattSizeInitial;
   };
 };
 
 const empty: ProductFormState = {};
 const inputClass =
   "w-full rounded-md border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-[#0F428F]";
+
+function wattTokensFromInput(raw: string): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const part of raw.split(",")) {
+    const m = part.trim().match(/(\d+(?:\.\d+)?)/);
+    if (!m) continue;
+    const key = String(Number(m[1]));
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(key);
+  }
+  return out;
+}
 
 export function ProductForm({ mode, productId, collections, initial }: Props) {
   const action =
@@ -47,6 +66,9 @@ export function ProductForm({ mode, productId, collections, initial }: Props) {
   const [imageList, setImageList] = useState<string[]>(initial?.images || []);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [wattageInput, setWattageInput] = useState(initial?.wattage || "");
+
+  const wattTokens = useMemo(() => wattTokensFromInput(wattageInput), [wattageInput]);
 
   const descriptionIsHtml = looksLikeHtml(initial?.description || "");
 
@@ -124,7 +146,7 @@ export function ProductForm({ mode, productId, collections, initial }: Props) {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="block text-sm">
-          <span className="mb-1 block font-medium text-slate-700">Price (PKR)</span>
+          <span className="mb-1 block font-medium text-slate-700">Default price (PKR)</span>
           <input
             name="price"
             type="number"
@@ -134,6 +156,9 @@ export function ProductForm({ mode, productId, collections, initial }: Props) {
             defaultValue={initial?.price ?? ""}
             className={inputClass}
           />
+          <span className="mt-1 block text-xs text-slate-500">
+            Used when a wattage has no price below. Listing shows the lowest wattage price.
+          </span>
           {state.fieldErrors?.price ? (
             <span className="mt-1 block text-xs text-red-600">{state.fieldErrors.price}</span>
           ) : null}
@@ -162,11 +187,12 @@ export function ProductForm({ mode, productId, collections, initial }: Props) {
         />
       </label>
 
-      <div className="rounded-lg border border-slate-200 bg-slate-50/80 p-4 space-y-4">
+      <div className="space-y-4 rounded-lg border border-slate-200 bg-slate-50/80 p-4">
         <div>
           <p className="text-sm font-semibold text-slate-800">Storefront options</p>
           <p className="mt-0.5 text-xs text-slate-500">
-            These become the Wattage and Color temperature pickers (e.g. Warm light/3000K) on the product page.
+            These become the Wattage and Color temperature pickers (e.g. Warm light/3000K) on the
+            product page.
           </p>
         </div>
 
@@ -175,7 +201,8 @@ export function ProductForm({ mode, productId, collections, initial }: Props) {
             <span className="mb-1 block font-medium text-slate-700">Wattage</span>
             <input
               name="wattage"
-              defaultValue={initial?.wattage}
+              value={wattageInput}
+              onChange={(e) => setWattageInput(e.target.value)}
               className={inputClass}
               placeholder="e.g. 100, 150, 200"
             />
@@ -194,6 +221,87 @@ export function ProductForm({ mode, productId, collections, initial }: Props) {
             </span>
           </label>
         </div>
+
+        {wattTokens.length > 0 ? (
+          <div className="overflow-hidden rounded-md border border-slate-200 bg-white">
+            <div className="border-b border-slate-200 bg-slate-50 px-3 py-2.5">
+              <p className="text-sm font-semibold text-slate-800">Price & size by wattage</p>
+              <p className="mt-0.5 text-xs text-slate-500">
+                Different price and optional size/length per watt. Leave blank to skip.
+              </p>
+            </div>
+            <div className="hidden grid-cols-[4rem_1fr_1fr_1.2fr] gap-3 border-b border-slate-100 px-3 py-2 text-xs font-medium text-slate-500 sm:grid">
+              <span>Watt</span>
+              <span>Price (PKR)</span>
+              <span>Was price</span>
+              <span>Size / length</span>
+            </div>
+            <div className="divide-y divide-slate-100">
+              {wattTokens.map((watt) => {
+                const init = initial?.wattagePrices?.[watt];
+                const initSize = initial?.wattageSizes?.[watt] ?? "";
+                return (
+                  <div
+                    key={watt}
+                    className="grid grid-cols-1 gap-2 px-3 py-3 sm:grid-cols-[4rem_1fr_1fr_1.2fr] sm:items-center sm:gap-3"
+                  >
+                    <p className="text-sm font-semibold text-slate-800">{watt}W</p>
+                    <label className="block text-sm">
+                      <span className="mb-1 block text-xs font-medium text-slate-500 sm:hidden">
+                        Price (PKR)
+                      </span>
+                      <input
+                        name={`watt_price_${watt}`}
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        defaultValue={init?.price ?? ""}
+                        className={inputClass}
+                        placeholder="Default"
+                      />
+                      {state.fieldErrors?.[`watt_price_${watt}`] ? (
+                        <span className="mt-1 block text-xs text-red-600">
+                          {state.fieldErrors[`watt_price_${watt}`]}
+                        </span>
+                      ) : null}
+                    </label>
+                    <label className="block text-sm">
+                      <span className="mb-1 block text-xs font-medium text-slate-500 sm:hidden">
+                        Was price
+                      </span>
+                      <input
+                        name={`watt_compare_${watt}`}
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        defaultValue={init?.compareAtPrice ?? ""}
+                        className={inputClass}
+                        placeholder="Optional"
+                      />
+                      {state.fieldErrors?.[`watt_compare_${watt}`] ? (
+                        <span className="mt-1 block text-xs text-red-600">
+                          {state.fieldErrors[`watt_compare_${watt}`]}
+                        </span>
+                      ) : null}
+                    </label>
+                    <label className="block text-sm">
+                      <span className="mb-1 block text-xs font-medium text-slate-500 sm:hidden">
+                        Size / length
+                      </span>
+                      <input
+                        name={`watt_size_${watt}`}
+                        type="text"
+                        defaultValue={initSize}
+                        className={inputClass}
+                        placeholder="e.g. 2 ft, 600mm"
+                      />
+                    </label>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
 
         <label className="block text-sm">
           <span className="mb-1 block font-medium text-slate-700">Style / shape (optional)</span>

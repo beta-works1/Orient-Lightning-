@@ -96,6 +96,24 @@ export const newsletterSubscribers = pgTable("newsletter_subscribers", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 
+export const partnerApplications = pgTable("partner_applications", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  companyName: text("company_name").notNull(),
+  contactPersonName: text("contact_person_name").notNull(),
+  designation: text("designation").notNull(),
+  mobileNumber: text("mobile_number").notNull(),
+  emailAddress: text("email_address").notNull(),
+  city: text("city").notNull(),
+  businessType: text("business_type").notNull(),
+  yearsInBusiness: text("years_in_business").notNull(),
+  ledExperience: text("led_experience").notNull(),
+  areasServed: text("areas_served").notNull(),
+  averageSalesRevenue: text("average_sales_revenue").notNull(),
+  whyPartner: text("why_partner").notNull(),
+  additionalComments: text("additional_comments").notNull().default(""),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
 export const adminUsers = pgTable("admin_users", {
   id: uuid("id").primaryKey(),
   email: text("email").notNull().unique(),

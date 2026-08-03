@@ -41,6 +41,13 @@ export function ProductPurchase({
         ) : null}
       </div>
 
+      {variant?.size?.trim() ? (
+        <p className="text-sm text-brand-navy">
+          <span className="text-brand-muted">Size / length:</span>{" "}
+          <span className="font-medium">{variant.size.trim()}</span>
+        </p>
+      ) : null}
+
       <ProductOptions product={product} onVariantChange={onVariantChange} />
 
       <div className="flex flex-wrap gap-3">
