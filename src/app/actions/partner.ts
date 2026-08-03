@@ -132,12 +132,34 @@ export async function submitPartnerApplication(
     `Submitted via ${SITE.name} website`,
   ].join("\n");
 
-  await sendEmail({
-    to: SITE.emailSales,
+  const notifyTo =
+    process.env.PARTNER_NOTIFY_EMAIL?.trim() || SITE.emailSales;
+
+  const emailed = await sendEmail({
+    to: notifyTo,
     subject: `Partner application — ${data.company_name}`,
     text,
     replyTo: data.email_address,
+    fields: {
+      company_name: data.company_name,
+      contact_person_name: data.contact_person_name,
+      designation: data.designation,
+      mobile_number: data.mobile_number,
+      email_address: data.email_address,
+      city: data.city,
+      business_type: data.business_type,
+      years_in_business: data.years_in_business,
+      led_experience: data.led_experience,
+      areas_served: data.areas_served,
+      average_sales_revenue: data.average_sales_revenue,
+      why_partner: data.why_partner,
+      additional_comments: data.additional_comments || "—",
+    },
   });
+
+  if (!emailed) {
+    console.error("[partner] Application saved but email notify failed for", notifyTo);
+  }
 
   return {
     ok: true,
