@@ -55,6 +55,10 @@ async function sendViaFormSubmit(input: SendEmailInput): Promise<boolean> {
   const to = notifyAddress(input.to);
   if (!to) return false;
 
+  const site =
+    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
+    "https://orientlighting.com.pk";
+
   const payload: Record<string, string> = {
     _subject: input.subject,
     _template: "table",
@@ -71,6 +75,8 @@ async function sendViaFormSubmit(input: SendEmailInput): Promise<boolean> {
     headers: {
       "Content-Type": "application/json",
       Accept: "application/json",
+      Origin: site,
+      Referer: `${site}/pages/become-our-partner`,
     },
     body: JSON.stringify(payload),
   });
@@ -81,11 +87,15 @@ async function sendViaFormSubmit(input: SendEmailInput): Promise<boolean> {
     return false;
   }
 
-  // FormSubmit returns JSON; activation-needed still counts as accepted delivery path
   try {
     const json = JSON.parse(body) as { success?: string | boolean; message?: string };
+    if (json.success === false || json.success === "false") {
+      console.error("[email] FormSubmit rejected:", json.message || body);
+      return false;
+    }
     if (json.message && /activation/i.test(json.message)) {
       console.warn("[email] FormSubmit needs inbox activation for", to, json.message);
+      return false;
     }
   } catch {
     // ignore non-JSON
