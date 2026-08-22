@@ -61,9 +61,9 @@ const nextConfig: NextConfig = {
     ];
   },
   images: {
-    // Product photos already live on the Supabase CDN. Vercel Image Optimization
-    // returns 402 (OPTIMIZED_IMAGE_REQUEST_PAYMENT_REQUIRED) for uncached widths,
-    // which shows up as a broken gallery/hero slot while other cached thumbs load.
+    // Bypass Vercel Image Optimization (402 on unpaid plans → broken product photos).
+    loader: "custom",
+    loaderFile: "./src/lib/imageLoader.ts",
     unoptimized: true,
     formats: ["image/avif", "image/webp"],
     qualities: [65, 75, 90],

@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { getAllProducts } from "@/lib/catalog";
 import { formatPrice } from "@/lib/format";
@@ -96,7 +95,14 @@ export default async function AdminProductsPage({ searchParams }: Props) {
                     <div className="flex items-center gap-3">
                       <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-md bg-slate-100">
                         {p.images[0] ? (
-                          <Image src={p.images[0]} alt="" fill className="object-contain p-1" sizes="48px" />
+                          // eslint-disable-next-line @next/next/no-img-element -- avoid Vercel /_next/image 402
+                          <img
+                            src={p.images[0]}
+                            alt=""
+                            className="h-full w-full object-contain p-1"
+                            loading="lazy"
+                            decoding="async"
+                          />
                         ) : null}
                       </div>
                       <div>

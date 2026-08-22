@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useMemo, useState } from "react";
-import { isRemoteImageUrl, usableProductImageUrls } from "@/lib/productImages";
+import { usableProductImageUrls } from "@/lib/productImages";
 
 export function ProductGallery({ images, title }: { images: string[]; title: string }) {
   const valid = useMemo(() => usableProductImageUrls(images), [images]);
@@ -41,7 +41,7 @@ export function ProductGallery({ images, title }: { images: string[]; title: str
           alt={title}
           fill
           priority
-          unoptimized={isRemoteImageUrl(current)}
+          unoptimized
           sizes="(max-width:768px) 100vw, 50vw"
           className="object-contain p-4"
           onError={() => markFailed(current)}
@@ -62,7 +62,7 @@ export function ProductGallery({ images, title }: { images: string[]; title: str
                 src={src}
                 alt=""
                 fill
-                unoptimized={isRemoteImageUrl(src)}
+                unoptimized
                 className="object-contain p-1"
                 sizes="64px"
                 onError={() => markFailed(src)}

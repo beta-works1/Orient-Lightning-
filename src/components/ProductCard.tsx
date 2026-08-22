@@ -5,7 +5,6 @@ import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
 import type { Product } from "@/lib/types";
 import { formatPrice } from "@/lib/format";
-import { isRemoteImageUrl } from "@/lib/productImages";
 import { CompareToggle } from "@/components/compare/CompareToggle";
 import {
   DURATION_HOVER,
@@ -61,7 +60,7 @@ export function ProductCard({
                 src={primary}
                 alt={product.title}
                 fill
-                unoptimized={isRemoteImageUrl(primary)}
+                unoptimized
                 sizes="(max-width:768px) 50vw, 25vw"
                 quality={65}
                 className={`object-contain p-3 transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
@@ -75,7 +74,7 @@ export function ProductCard({
                   src={secondary}
                   alt=""
                   fill
-                  unoptimized={isRemoteImageUrl(secondary)}
+                  unoptimized
                   sizes="(max-width:768px) 50vw, 25vw"
                   quality={65}
                   loading="lazy"
