@@ -79,6 +79,9 @@ export default async function EditProductPage({ params, searchParams }: Props) {
           collectionHandles: product.collectionIds,
           wattagePrices,
           wattageSizes,
+          catalogueUrl: product.catalogueUrl,
+          catalogueFilename: product.catalogueFilename,
+          catalogueStoragePath: product.catalogueStoragePath,
         }}
       />
     </div>

@@ -1,45 +1,25 @@
 "use client";
 
-import { useActionState, useEffect, useRef, type ReactNode } from "react";
+import {
+  useActionState,
+  useEffect,
+  useRef,
+  cloneElement,
+  isValidElement,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 import {
   submitPartnerApplication,
   type PartnerFormState,
 } from "@/app/actions/partner";
+import { PARTNER_HONEYPOT_FIELD } from "@/lib/partnerFormFields";
 import { SITE } from "@/lib/types";
 
 const initial: PartnerFormState = { ok: false, message: "" };
 
 const inputClass =
   "w-full rounded-md border border-brand-border bg-white px-3 py-2.5 text-sm text-brand-navy outline-none transition focus:border-brand focus:shadow-[0_0_0_3px_rgba(15,66,143,0.12)]";
-
-const SALES_NOTIFY = SITE.emailSales;
-
-async function notifySalesFromBrowser(payload: Record<string, string>) {
-  const res = await fetch(
-    `https://formsubmit.co/ajax/${encodeURIComponent(SALES_NOTIFY)}`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify({
-        ...payload,
-        _captcha: "false",
-      }),
-    },
-  );
-  if (!res.ok) {
-    throw new Error(`FormSubmit HTTP ${res.status}`);
-  }
-  const json = (await res.json().catch(() => null)) as {
-    success?: string | boolean;
-    message?: string;
-  } | null;
-  if (json && (json.success === false || json.success === "false")) {
-    throw new Error(json.message || "FormSubmit rejected");
-  }
-}
 
 function Field({
   label,
@@ -54,40 +34,85 @@ function Field({
   children: ReactNode;
   hint?: string;
 }) {
+  const errorId = `${name}-error`;
+  const hintId = `${name}-hint`;
+  const describedBy = [error ? errorId : null, hint ? hintId : null]
+    .filter(Boolean)
+    .join(" ");
+
+  const control = isValidElement(children)
+    ? cloneElement(children as ReactElement<Record<string, unknown>>, {
+        id: name,
+        "aria-invalid": error ? true : undefined,
+        "aria-describedby": describedBy || undefined,
+      })
+    : children;
+
   return (
-    <label className="block text-sm">
-      <span className="mb-1.5 block font-medium text-brand-navy">{label}</span>
-      {children}
-      {hint ? <span className="mt-1 block text-xs text-brand-muted">{hint}</span> : null}
+    <div className="block text-sm">
+      <label htmlFor={name} className="mb-1.5 block font-medium text-brand-navy">
+        {label}
+      </label>
+      {control}
+      {hint ? (
+        <span id={hintId} className="mt-1 block text-xs text-brand-muted">
+          {hint}
+        </span>
+      ) : null}
       {error ? (
-        <span className="mt-1 block text-xs text-brand-sale" id={`${name}-error`}>
+        <span className="mt-1 block text-xs text-brand-sale" id={errorId} role="alert">
           {error}
         </span>
       ) : null}
-    </label>
+    </div>
   );
 }
 
 export function PartnerApplicationForm() {
   const [state, action, pending] = useActionState(submitPartnerApplication, initial);
-  const emailedRef = useRef<string | null>(null);
+  const successRef = useRef<HTMLDivElement>(null);
+  const errorSummaryRef = useRef<HTMLParagraphElement>(null);
+
+  const showSuccess = state.ok && !state.ignored && Boolean(state.message);
 
   useEffect(() => {
-    if (!state.ok || !state.notifyPayload) return;
-    const key = `${state.notifyPayload.email_address}|${state.notifyPayload.company_name}|${state.notifyPayload._subject}`;
-    if (emailedRef.current === key) return;
-    emailedRef.current = key;
+    if (showSuccess) {
+      successRef.current?.focus();
+      return;
+    }
+    if (state.message && !state.ok) {
+      errorSummaryRef.current?.focus();
+    }
+  }, [state, showSuccess]);
 
-    void notifySalesFromBrowser(state.notifyPayload).catch((err) => {
-      console.error("[partner] browser notify failed:", err);
-    });
-  }, [state]);
-
-  if (state.ok) {
+  if (showSuccess) {
     return (
-      <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-6 text-sm text-emerald-900">
+      <div
+        ref={successRef}
+        tabIndex={-1}
+        role="status"
+        aria-live="polite"
+        className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-6 text-sm text-emerald-900 outline-none"
+      >
         <p className="font-semibold">Application received</p>
         <p className="mt-1">{state.message}</p>
+        {state.emailed && state.applicantEmail ? (
+          <p className="mt-2 text-emerald-800">
+            We’ll follow up at <strong>{state.applicantEmail}</strong> from{" "}
+            <a href={`mailto:${SITE.emailSales}`} className="underline">
+              {SITE.emailSales}
+            </a>
+            .
+          </p>
+        ) : (
+          <p className="mt-2 text-emerald-800">
+            Questions? Email{" "}
+            <a href={`mailto:${SITE.emailSales}`} className="underline">
+              {SITE.emailSales}
+            </a>
+            .
+          </p>
+        )}
       </div>
     );
   }
@@ -95,38 +120,76 @@ export function PartnerApplicationForm() {
   const err = state.fieldErrors || {};
 
   return (
-    <form action={action} className="space-y-5">
-      <input
-        type="text"
-        name="company_website"
-        tabIndex={-1}
-        autoComplete="off"
+    <form action={action} className="relative space-y-5" noValidate>
+      <div
+        className="pointer-events-none absolute -left-[9999px] h-px w-px overflow-hidden opacity-0"
         aria-hidden="true"
-        className="absolute left-[-9999px] h-0 w-0 opacity-0"
-      />
+        inert
+      >
+        <label>
+          Leave this field empty
+          <input
+            type="text"
+            name={PARTNER_HONEYPOT_FIELD}
+            tabIndex={-1}
+            autoComplete="off"
+            data-lpignore="true"
+            data-1p-ignore="true"
+          />
+        </label>
+      </div>
 
       <div className="grid gap-5 sm:grid-cols-2">
         <Field label="Company Name" name="company_name" error={err.company_name}>
-          <input name="company_name" required className={inputClass} />
+          <input
+            name="company_name"
+            required
+            autoComplete="organization"
+            className={inputClass}
+          />
         </Field>
         <Field
           label="Contact Person Name"
           name="contact_person_name"
           error={err.contact_person_name}
         >
-          <input name="contact_person_name" required className={inputClass} />
+          <input
+            name="contact_person_name"
+            required
+            autoComplete="name"
+            className={inputClass}
+          />
         </Field>
         <Field label="Designation" name="designation" error={err.designation}>
-          <input name="designation" required className={inputClass} placeholder="e.g. Owner, Sales Manager" />
+          <input
+            name="designation"
+            required
+            autoComplete="organization-title"
+            className={inputClass}
+            placeholder="e.g. Owner, Sales Manager"
+          />
         </Field>
         <Field label="Mobile Number" name="mobile_number" error={err.mobile_number}>
-          <input name="mobile_number" type="tel" required className={inputClass} placeholder="+92 3XX XXXXXXX" />
+          <input
+            name="mobile_number"
+            type="tel"
+            required
+            autoComplete="tel"
+            className={inputClass}
+            placeholder="+92 3XX XXXXXXX"
+          />
         </Field>
         <Field label="Email Address" name="email_address" error={err.email_address}>
-          <input name="email_address" type="email" required className={inputClass} />
+          <input
+            name="email_address"
+            type="email"
+            required
+            autoComplete="email"
+            className={inputClass}
+          />
         </Field>
         <Field label="City" name="city" error={err.city}>
-          <input name="city" required className={inputClass} />
+          <input name="city" required autoComplete="address-level2" className={inputClass} />
         </Field>
         <Field label="Business Type" name="business_type" error={err.business_type}>
           <input
@@ -199,12 +262,20 @@ export function PartnerApplicationForm() {
       </Field>
 
       {state.message && !state.ok ? (
-        <p className="text-sm text-brand-sale">{state.message}</p>
+        <p
+          ref={errorSummaryRef}
+          tabIndex={-1}
+          role="alert"
+          className="text-sm text-brand-sale outline-none"
+        >
+          {state.message}
+        </p>
       ) : null}
 
       <button
         type="submit"
         disabled={pending}
+        aria-busy={pending}
         className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-brand px-6 py-2.5 text-sm font-semibold text-white hover:bg-brand-navy disabled:opacity-60"
       >
         {pending ? "Submitting…" : "Submit application"}

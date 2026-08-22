@@ -2,57 +2,59 @@
 
 export type DetectedFileKind = "jpeg" | "png" | "webp" | "gif" | "avif" | "pdf" | null;
 
-export function detectFileKind(buffer: Buffer): DetectedFileKind {
-  if (buffer.length < 4) return null;
+function ascii(bytes: Uint8Array, start: number, end: number): string {
+  return String.fromCharCode(...bytes.subarray(start, end));
+}
+
+/** Accepts Node Buffer or browser Uint8Array. */
+export function detectFileKind(bytes: Uint8Array): DetectedFileKind {
+  if (bytes.length < 4) return null;
 
   // JPEG
-  if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) return "jpeg";
+  if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return "jpeg";
 
   // PNG
   if (
-    buffer.length >= 8 &&
-    buffer[0] === 0x89 &&
-    buffer[1] === 0x50 &&
-    buffer[2] === 0x4e &&
-    buffer[3] === 0x47
+    bytes.length >= 8 &&
+    bytes[0] === 0x89 &&
+    bytes[1] === 0x50 &&
+    bytes[2] === 0x4e &&
+    bytes[3] === 0x47
   ) {
     return "png";
   }
 
   // GIF
-  if (buffer.length >= 6) {
-    const gif = buffer.subarray(0, 6).toString("ascii");
+  if (bytes.length >= 6) {
+    const gif = ascii(bytes, 0, 6);
     if (gif === "GIF87a" || gif === "GIF89a") return "gif";
   }
 
   // WEBP: RIFF....WEBP
-  if (
-    buffer.length >= 12 &&
-    buffer.subarray(0, 4).toString("ascii") === "RIFF" &&
-    buffer.subarray(8, 12).toString("ascii") === "WEBP"
-  ) {
+  if (bytes.length >= 12 && ascii(bytes, 0, 4) === "RIFF" && ascii(bytes, 8, 12) === "WEBP") {
     return "webp";
   }
 
   // AVIF / HEIF: ftyp....avif / avis
-  if (buffer.length >= 12 && buffer.subarray(4, 8).toString("ascii") === "ftyp") {
-    const brand = buffer.subarray(8, 12).toString("ascii");
+  if (bytes.length >= 12 && ascii(bytes, 4, 8) === "ftyp") {
+    const brand = ascii(bytes, 8, 12);
     if (brand === "avif" || brand === "avis" || brand === "mif1") return "avif";
   }
 
   // PDF
-  if (buffer.length >= 5 && buffer.subarray(0, 5).toString("ascii") === "%PDF-") return "pdf";
+  if (bytes.length >= 5 && ascii(bytes, 0, 5) === "%PDF-") return "pdf";
 
   return null;
 }
 
-export function mimeForKind(kind: Exclude<DetectedFileKind, null | "pdf">): string {
+export function mimeForKind(kind: Exclude<DetectedFileKind, null>): string {
   const map = {
     jpeg: "image/jpeg",
     png: "image/png",
     webp: "image/webp",
     gif: "image/gif",
     avif: "image/avif",
+    pdf: "application/pdf",
   } as const;
   return map[kind];
 }

@@ -4,7 +4,7 @@ import { ProductGallery } from "@/components/ProductGallery";
 import { ProductPurchase } from "@/components/ProductPurchase";
 import { ProductRail } from "@/components/ProductRail";
 import { getProductByHandle, getRelatedProducts } from "@/lib/catalog";
-import { getCatalogueDownload } from "@/lib/catalogueSettings";
+import { getCatalogueForProduct } from "@/lib/catalogueSettings";
 import { sanitizeHtml } from "@/lib/sanitizeHtml";
 
 type Props = { params: Promise<{ handle: string }> };
@@ -31,7 +31,7 @@ export default async function ProductPage({ params }: Props) {
 
   const [related, catalogue] = await Promise.all([
     getRelatedProducts(product, 4),
-    getCatalogueDownload(),
+    getCatalogueForProduct(product),
   ]);
 
   return (

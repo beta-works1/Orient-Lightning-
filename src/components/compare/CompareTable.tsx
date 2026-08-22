@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import type { Product } from "@/lib/types";
+import { extraCompareTableRows, buildCompareSpecSlice } from "@/lib/compare/specSlice";
 import { formatPrice } from "@/lib/format";
 import { useCompare } from "./CompareProvider";
 
@@ -19,7 +20,12 @@ function optionLabel(product: Product): string {
   return product.options.map((o) => `${o.name}: ${o.values.join(", ")}`).join(" · ");
 }
 
+function orDash(value: string | null | undefined): string {
+  return value?.trim() || "—";
+}
+
 function buildRows(products: Product[]): Row[] {
+  const slices = products.map((p) => buildCompareSpecSlice(p));
   return [
     {
       key: "price",
@@ -38,15 +44,20 @@ function buildRows(products: Product[]): Row[] {
     {
       key: "wattage",
       label: "Wattage",
-      values: products.map((p) => (p.facets?.wattage?.length ? p.facets.wattage.join(", ") : "—")),
+      values: products.map((p, i) =>
+        p.facets?.wattage?.length ? p.facets.wattage.join(", ") : orDash(slices[i].wattage),
+      ),
     },
     {
       key: "colorTemp",
       label: "Color temp",
-      values: products.map((p) =>
-        p.facets?.colorTemp?.length ? p.facets.colorTemp.join(", ") : "—",
+      values: products.map((p, i) =>
+        p.facets?.colorTemp?.length
+          ? p.facets.colorTemp.join(", ")
+          : orDash(slices[i].colorTemp),
       ),
     },
+    ...extraCompareTableRows(slices),
     {
       key: "options",
       label: "Options",

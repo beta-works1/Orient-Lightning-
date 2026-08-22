@@ -45,6 +45,12 @@ const nextConfig: NextConfig = {
   compress: true,
   experimental: {
     optimizePackageImports: ["framer-motion"],
+    // Safety net for leftover server-action FormData posts. Browser uploads
+    // PUT directly to Supabase via signed URLs (see src/lib/upload/).
+    serverActions: {
+      bodySizeLimit: "25mb",
+    },
+    middlewareClientMaxBodySize: "30mb",
   },
   async headers() {
     return [

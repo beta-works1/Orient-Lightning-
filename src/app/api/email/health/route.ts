@@ -1,21 +1,35 @@
 import { NextResponse } from "next/server";
-import { emailHealthSnapshot, sendEmail } from "@/lib/email";
+import { canDeliverPartnerEmail, emailHealthSnapshot, sendEmail } from "@/lib/email";
 import { SITE } from "@/lib/types";
 
 /**
  * Diagnostics for partner email delivery.
- * GET  /api/email/health — config status (safe)
- * POST /api/email/health — send test mail (requires EMAIL_HEALTH_SECRET header)
+ * GET/POST both require EMAIL_HEALTH_SECRET (fail closed).
  */
-export async function GET() {
-  return NextResponse.json(emailHealthSnapshot());
+function authorize(req: Request): boolean {
+  const secret = process.env.EMAIL_HEALTH_SECRET?.trim();
+  const provided = req.headers.get("x-email-health-secret")?.trim();
+  return Boolean(secret && provided && provided === secret);
+}
+
+function unauthorized() {
+  return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+}
+
+export async function GET(req: Request) {
+  if (!authorize(req)) return unauthorized();
+  const health = emailHealthSnapshot();
+  return NextResponse.json(health, { status: health.ok ? 200 : 503 });
 }
 
 export async function POST(req: Request) {
-  const secret = process.env.EMAIL_HEALTH_SECRET?.trim();
-  const provided = req.headers.get("x-email-health-secret")?.trim();
-  if (!secret || !provided || provided !== secret) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!authorize(req)) return unauthorized();
+
+  if (!canDeliverPartnerEmail()) {
+    return NextResponse.json(
+      { error: "No email provider configured.", health: emailHealthSnapshot() },
+      { status: 503 },
+    );
   }
 
   const to = process.env.PARTNER_NOTIFY_EMAIL?.trim() || SITE.emailSales;

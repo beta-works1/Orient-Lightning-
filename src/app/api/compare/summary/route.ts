@@ -1,37 +1,17 @@
 import { NextResponse } from "next/server";
 import { getProductByHandle } from "@/lib/catalog";
+import { buildCompareSummaryPrompt } from "@/lib/compare/prompt";
 import {
   clientIp,
   generateWithModelFallback,
   geminiErrorResponse,
   rateLimited,
 } from "@/lib/chat/gemini";
-import { formatPrice } from "@/lib/format";
-import { SITE, WHATSAPP_URL } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const MAX_PRODUCTS = 4;
-
-function productBlock(p: NonNullable<Awaited<ReturnType<typeof getProductByHandle>>>): string {
-  const watts = p.facets?.wattage?.length ? p.facets.wattage.join(", ") : "n/a";
-  const cct = p.facets?.colorTemp?.length ? p.facets.colorTemp.join(", ") : "n/a";
-  const options = p.options?.length
-    ? p.options.map((o) => `${o.name}: ${o.values.join(", ")}`).join(" · ")
-    : "n/a";
-  return [
-    `Title: ${p.title}`,
-    `Handle: ${p.handle}`,
-    `URL: /products/${p.handle}`,
-    `Price: ${formatPrice(p.price)}`,
-    `Type: ${p.productType || "n/a"}`,
-    `Wattage: ${watts}`,
-    `Color temp: ${cct}`,
-    `Options: ${options}`,
-    `SKU: ${p.sku || "n/a"}`,
-  ].join("\n");
-}
 
 export async function POST(request: Request) {
   const key = process.env.GEMINI_API_KEY?.trim();
@@ -88,25 +68,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const prompt = [
-      `You are the ${SITE.name} product advisor (${SITE.legalName}, Pakistan).`,
-      "Write a short comparison summary for shoppers looking at these Orient LED products side by side.",
-      "",
-      "Rules:",
-      "- Use ONLY the product facts below. Do not invent wattage, prices, or features.",
-      "- 3–5 short sentences OR up to 4 bullet lines.",
-      "- Call out the main differences (price, wattage, color temp, type, best use).",
-      "- Say which product fits which space when clear (e.g. high bay vs batten).",
-      `- Link each product once as markdown: [Product Title](/products/handle)`,
-      `- For quotes or help, mention WhatsApp ${SITE.phoneDisplay} as [${SITE.phoneDisplay}](${WHATSAPP_URL}).`,
-      "- Friendly English. No fluff, no hype.",
-      "",
-      "Products:",
-      ...products.map((p, i) => `\n--- Product ${i + 1} ---\n${productBlock(p)}`),
-      "",
-      "Summary:",
-    ].join("\n");
-
+    const prompt = buildCompareSummaryPrompt(products);
     const summary = await generateWithModelFallback(key, prompt, "[api/compare/summary]");
     return NextResponse.json({
       summary,

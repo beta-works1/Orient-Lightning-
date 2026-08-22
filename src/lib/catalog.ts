@@ -22,13 +22,16 @@ type ProductRow = {
   seo_title: string;
   seo_description: string;
   published_at: string | null;
+  catalogue_url?: string | null;
+  catalogue_filename?: string | null;
+  catalogue_storage_path?: string | null;
 };
 
 const PRODUCT_SELECT =
-  "id, handle, title, description, price, compare_at_price, sku, product_type, vendor, status, images, variants, options, tags, facets, seo_title, seo_description, published_at";
+  "id, handle, title, description, price, compare_at_price, sku, product_type, vendor, status, images, variants, options, tags, facets, seo_title, seo_description, published_at, catalogue_url, catalogue_filename, catalogue_storage_path";
 
 const LIST_SELECT =
-  "id, handle, title, description, price, compare_at_price, sku, product_type, vendor, status, images, tags, facets, seo_title, seo_description, published_at";
+  "id, handle, title, description, price, compare_at_price, sku, product_type, vendor, status, images, tags, facets, seo_title, seo_description, published_at, catalogue_url, catalogue_filename";
 
 const CATALOG_REVALIDATE = 120;
 
@@ -90,6 +93,9 @@ function mapProduct(
     seoDescription: row.seo_description ?? "",
     facets: row.facets ?? { wattage: [], colorTemp: [] },
     publishedAt: row.published_at,
+    catalogueUrl: row.catalogue_url || null,
+    catalogueFilename: row.catalogue_filename || null,
+    catalogueStoragePath: row.catalogue_storage_path || null,
     status: row.status,
   };
 }
@@ -134,7 +140,7 @@ async function fetchPublishedProducts(): Promise<(Product & { status: "draft" | 
   return rows.map((row) => mapProduct(row, handles.get(row.id) ?? []));
 }
 
-const cachedPublishedProducts = unstable_cache(fetchPublishedProducts, ["catalog-products-v3"], {
+const cachedPublishedProducts = unstable_cache(fetchPublishedProducts, ["catalog-products-v4"], {
   revalidate: CATALOG_REVALIDATE,
   tags: ["catalog"],
 });

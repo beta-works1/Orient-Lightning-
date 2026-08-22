@@ -4,7 +4,7 @@ import { SITE } from "@/lib/types";
 
 export const metadata: Metadata = {
   title: "Become Our Partner",
-  description: `Apply to become an ${SITE.name} distribution partner. Applications go to ${SITE.emailSales}.`,
+  description: `Apply to become an ${SITE.name} distribution partner. Our team reviews applications in order.`,
 };
 
 export default function BecomeOurPartnerPage() {
@@ -14,7 +14,7 @@ export default function BecomeOurPartnerPage() {
       <h1 className="mt-2 font-display text-3xl text-brand-navy sm:text-4xl">Become Our Partner</h1>
       <p className="mt-4 text-base leading-relaxed text-brand-muted">
         Join the {SITE.name} distribution network with {SITE.legalName}. Tell us about your
-        business below — we’ll review your application and follow up from{" "}
+        business below — we’ll review your application. Questions:{" "}
         <a href={`mailto:${SITE.emailSales}`} className="text-brand hover:underline">
           {SITE.emailSales}
         </a>

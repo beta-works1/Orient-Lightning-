@@ -40,6 +40,12 @@ export default async function AdminProductsPage({ searchParams }: Props) {
             Catalogue PDF
           </Link>
           <Link
+            href="/admin/partners"
+            className="inline-flex min-h-[44px] items-center justify-center rounded-md border border-[#0F428F] bg-white px-4 text-sm font-semibold text-[#0F428F] hover:bg-[#0F428F]/5"
+          >
+            Partner leads
+          </Link>
+          <Link
             href="/admin/products/new"
             className="inline-flex min-h-[44px] items-center justify-center rounded-md bg-[#0F428F] px-4 text-sm font-semibold text-white hover:bg-[#162950]"
           >
@@ -69,6 +75,7 @@ export default async function AdminProductsPage({ searchParams }: Props) {
             <tr>
               <th className="px-3 py-3">Product</th>
               <th className="px-3 py-3">Price</th>
+              <th className="px-3 py-3">Catalog</th>
               <th className="px-3 py-3">Status</th>
               <th className="px-3 py-3 text-right">Actions</th>
             </tr>
@@ -76,7 +83,7 @@ export default async function AdminProductsPage({ searchParams }: Props) {
           <tbody>
             {products.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-3 py-8 text-center text-slate-500">
+                <td colSpan={5} className="px-3 py-8 text-center text-slate-500">
                   No products match this search.
                 </td>
               </tr>
@@ -99,6 +106,15 @@ export default async function AdminProductsPage({ searchParams }: Props) {
                     </div>
                   </td>
                   <td className="whitespace-nowrap px-3 py-3">{formatPrice(p.price)}</td>
+                  <td className="px-3 py-3">
+                    {p.catalogueUrl ? (
+                      <span className="rounded-full bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-800">
+                        Product PDF
+                      </span>
+                    ) : (
+                      <span className="text-xs text-slate-400">Site default</span>
+                    )}
+                  </td>
                   <td className="px-3 py-3">
                     <span
                       className={`rounded-full px-2 py-0.5 text-xs font-medium ${

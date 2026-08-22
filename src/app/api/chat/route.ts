@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { buildProductContext, buildSystemPrompt } from "@/lib/chat/productContext";
+import {
+  buildChatCompareAppendix,
+  buildProductContext,
+  buildSystemPrompt,
+} from "@/lib/chat/productContext";
 import {
   clientIp,
   generateWithModelFallback,
@@ -14,6 +18,19 @@ type ChatMessage = { role: "user" | "assistant"; content: string };
 
 const MAX_MESSAGE = 1000;
 const MAX_HISTORY = 12;
+const MAX_COMPARE = 4;
+
+function parseCompareHandles(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  return [
+    ...new Set(
+      raw
+        .filter((h): h is string => typeof h === "string")
+        .map((h) => h.trim())
+        .filter(Boolean),
+    ),
+  ].slice(0, MAX_COMPARE);
+}
 
 export async function POST(request: Request) {
   const key = process.env.GEMINI_API_KEY?.trim();
@@ -34,7 +51,7 @@ export async function POST(request: Request) {
     );
   }
 
-  let body: { messages?: ChatMessage[] };
+  let body: { messages?: ChatMessage[]; compareHandles?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -50,8 +67,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Message is too long." }, { status: 400 });
   }
 
+  const compareHandles = parseCompareHandles(body.compareHandles);
+
   try {
-    const catalog = await buildProductContext();
+    const { catalog, products } = await buildProductContext();
+    const appendix = buildChatCompareAppendix(products, lastUser.content.trim(), compareHandles);
     const system = buildSystemPrompt(catalog);
 
     const historyText = messages
@@ -64,6 +84,7 @@ export async function POST(request: Request) {
 
     const prompt = [
       system,
+      appendix,
       historyText ? `\nConversation so far:\n${historyText}` : "",
       `\nUser: ${lastUser.content.trim()}`,
       "\nAssistant:",

@@ -47,6 +47,10 @@ export const products = pgTable("products", {
     .default({ wattage: [], colorTemp: [] }),
   seoTitle: text("seo_title").notNull().default(""),
   seoDescription: text("seo_description").notNull().default(""),
+  /** Product-family catalogue PDF; storefront falls back to site_settings.catalogue when null. */
+  catalogueUrl: text("catalogue_url"),
+  catalogueFilename: text("catalogue_filename"),
+  catalogueStoragePath: text("catalogue_storage_path"),
   publishedAt: timestamp("published_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),

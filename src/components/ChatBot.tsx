@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { ChatRichText } from "@/components/chat/ChatRichText";
+import { useCompare } from "@/components/compare/CompareProvider";
 import { SITE, WHATSAPP_URL } from "@/lib/types";
 
 type Msg = { role: "user" | "assistant"; content: string };
@@ -19,6 +20,7 @@ export function ChatBot() {
   const [error, setError] = useState<string | null>(null);
   const [messages, setMessages] = useState<Msg[]>([STARTER]);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const { items, ready } = useCompare();
 
   useEffect(() => {
     if (open) bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -39,7 +41,10 @@ export function ChatBot() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: next }),
+        body: JSON.stringify({
+          messages: next,
+          compareHandles: ready ? items.map((i) => i.handle) : [],
+        }),
       });
       const data = (await res.json()) as { reply?: string; error?: string };
       if (!res.ok || !data.reply) {

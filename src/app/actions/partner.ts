@@ -1,16 +1,21 @@
 "use server";
 
 import { headers } from "next/headers";
+import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/admin";
-import { sendEmail } from "@/lib/email";
+import { canDeliverPartnerEmail, sendEmail } from "@/lib/email";
+import { PARTNER_HONEYPOT_FIELD } from "@/lib/partnerFormFields";
 import { SITE } from "@/lib/types";
 
 export type PartnerFormState = {
   ok: boolean;
   message: string;
   fieldErrors?: Record<string, string>;
-  /** Browser sends this to FormSubmit (Vercel server IPs are often blocked). */
-  notifyPayload?: Record<string, string>;
+  applicantEmail?: string;
+  /** True only when a configured server provider accepted the message. */
+  emailed?: boolean;
+  /** Honeypot tripped — HTTP-ok no-op; client must not show success chrome. */
+  ignored?: boolean;
 };
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -38,22 +43,18 @@ function required(formData: FormData, key: string, max = SHORT_MAX): string {
     .slice(0, max);
 }
 
+const SAVED_MESSAGE =
+  "Thank you — your application was saved. Our team will review it.";
+const EMAILED_MESSAGE =
+  "Thank you — your application was submitted. Our sales team will contact you soon.";
+
 export async function submitPartnerApplication(
   _prev: PartnerFormState,
   formData: FormData,
 ): Promise<PartnerFormState> {
-  const honey = String(formData.get("company_website") || "").trim();
+  const honey = String(formData.get(PARTNER_HONEYPOT_FIELD) || "").trim();
   if (honey) {
-    return { ok: true, message: "Thank you — we received your application." };
-  }
-
-  const h = await headers();
-  const ip =
-    h.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    h.get("x-real-ip") ||
-    "unknown";
-  if (rateLimited(`partner:${ip}`)) {
-    return { ok: false, message: "Too many attempts. Please try again shortly." };
+    return { ok: true, ignored: true, emailed: false, message: "" };
   }
 
   const data = {
@@ -94,12 +95,25 @@ export async function submitPartnerApplication(
   if (data.email_address && !EMAIL_RE.test(data.email_address)) {
     fieldErrors.email_address = "Enter a valid email address.";
   }
+  const mobileDigits = data.mobile_number.replace(/\D/g, "");
+  if (data.mobile_number && mobileDigits.length < 7) {
+    fieldErrors.mobile_number = "Enter a valid mobile number.";
+  }
   if (Object.keys(fieldErrors).length) {
     return {
       ok: false,
       message: "Please fill in the required fields.",
       fieldErrors,
     };
+  }
+
+  const h = await headers();
+  const ip =
+    h.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    h.get("x-real-ip") ||
+    "unknown";
+  if (rateLimited(`partner:${ip}`)) {
+    return { ok: false, message: "Too many attempts. Please try again shortly." };
   }
 
   try {
@@ -114,71 +128,53 @@ export async function submitPartnerApplication(
     return { ok: false, message: "Could not submit right now. Please try again." };
   }
 
-  const text = [
-    "New distribution partner application",
-    "",
-    `Company Name: ${data.company_name}`,
-    `Contact Person: ${data.contact_person_name}`,
-    `Designation: ${data.designation}`,
-    `Mobile: ${data.mobile_number}`,
-    `Email: ${data.email_address}`,
-    `City: ${data.city}`,
-    `Business Type: ${data.business_type}`,
-    `Years in Business: ${data.years_in_business}`,
-    `LED experience: ${data.led_experience}`,
-    `Areas served: ${data.areas_served}`,
-    `Average sales revenue: ${data.average_sales_revenue}`,
-    `Why partner: ${data.why_partner}`,
-    `Additional comments: ${data.additional_comments || "—"}`,
-    "",
-    `Submitted via ${SITE.name} website`,
-  ].join("\n");
+  revalidatePath("/admin/partners");
 
-  const notifyTo =
-    process.env.PARTNER_NOTIFY_EMAIL?.trim() || SITE.emailSales;
+  let emailed = false;
+  if (canDeliverPartnerEmail()) {
+    const text = [
+      "New distribution partner application",
+      "",
+      `Company Name: ${data.company_name}`,
+      `Contact Person: ${data.contact_person_name}`,
+      `Designation: ${data.designation}`,
+      `Mobile: ${data.mobile_number}`,
+      `Email: ${data.email_address}`,
+      `City: ${data.city}`,
+      `Business Type: ${data.business_type}`,
+      `Years in Business: ${data.years_in_business}`,
+      `LED experience: ${data.led_experience}`,
+      `Areas served: ${data.areas_served}`,
+      `Average sales revenue: ${data.average_sales_revenue}`,
+      `Why partner: ${data.why_partner}`,
+      `Additional comments: ${data.additional_comments || "—"}`,
+      "",
+      `Submitted via ${SITE.name} website`,
+    ].join("\n");
 
-  const notifyPayload: Record<string, string> = {
-    _subject: `Partner application — ${data.company_name}`,
-    _template: "table",
-    _captcha: "false",
-    message: text,
-    company_name: data.company_name,
-    contact_person_name: data.contact_person_name,
-    designation: data.designation,
-    mobile_number: data.mobile_number,
-    email_address: data.email_address,
-    city: data.city,
-    business_type: data.business_type,
-    years_in_business: data.years_in_business,
-    led_experience: data.led_experience,
-    areas_served: data.areas_served,
-    average_sales_revenue: data.average_sales_revenue,
-    why_partner: data.why_partner,
-    additional_comments: data.additional_comments || "—",
-    email: data.email_address,
-    _replyto: data.email_address,
-  };
+    const notifyTo =
+      process.env.PARTNER_NOTIFY_EMAIL?.trim() || SITE.emailSales;
 
-  // Best-effort server send (may fail on Vercel → FormSubmit). Browser retries via notifyPayload.
-  const emailResult = await sendEmail({
-    to: notifyTo,
-    subject: notifyPayload._subject,
-    text,
-    replyTo: data.email_address,
-    fields: notifyPayload,
-  });
-
-  if (!emailResult.ok) {
-    console.error("[partner] Server email failed (browser will retry):", {
+    const emailResult = await sendEmail({
       to: notifyTo,
-      error: emailResult.error,
-      provider: emailResult.provider,
+      subject: `Partner application — ${data.company_name}`,
+      text,
+      replyTo: data.email_address,
     });
+    emailed = emailResult.ok;
+    if (!emailResult.ok) {
+      console.error("[partner] Server email failed; lead is in /admin/partners:", {
+        to: notifyTo,
+        error: emailResult.error,
+        provider: emailResult.provider,
+      });
+    }
   }
 
   return {
     ok: true,
-    message: "Thank you — your application was submitted. Our sales team will contact you soon.",
-    notifyPayload,
+    emailed,
+    message: emailed ? EMAILED_MESSAGE : SAVED_MESSAGE,
+    applicantEmail: data.email_address,
   };
 }

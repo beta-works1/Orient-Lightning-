@@ -11,18 +11,13 @@ export type SendEmailInput = {
 
 export type SendEmailResult = {
   ok: boolean;
-  provider?: "gmail" | "resend" | "formsubmit";
+  provider?: "gmail" | "resend";
   error?: string;
   status?: number;
 };
 
 function recipients(to: string | string[]): string[] {
   return (Array.isArray(to) ? to : [to]).map((a) => a.trim()).filter(Boolean);
-}
-
-function notifyDefault(to: string | string[]) {
-  const first = recipients(to)[0];
-  return (process.env.PARTNER_NOTIFY_EMAIL || first || SITE.emailSales).trim();
 }
 
 function gmailConfigured() {
@@ -50,10 +45,9 @@ function resendCanDeliver() {
   return resendConfigured() && !usingResendTestFrom();
 }
 
-/** True when this deployment can deliver partner emails. */
+/** True only when Gmail SMTP or a verified Resend sender is configured. */
 export function canDeliverPartnerEmail() {
-  // FormSubmit is always available as last resort for sales@ notify.
-  return true;
+  return gmailConfigured() || resendCanDeliver();
 }
 
 export function emailHealthSnapshot() {
@@ -61,25 +55,26 @@ export function emailHealthSnapshot() {
   const gmail = gmailConfigured();
   const resend = resendConfigured();
   const testFrom = usingResendTestFrom();
+  const canDeliver = canDeliverPartnerEmail();
 
-  let status = "ready_formsubmit";
+  let status = "not_configured";
   let nextStep =
-    "Partner emails will send via FormSubmit to sales@orientlighting.pk. Optionally add Gmail App Password for a more durable setup.";
-  let provider: "gmail" | "resend" | "formsubmit" = "formsubmit";
+    "Partner applications are saved to /admin/partners. Optional: add GMAIL_USER + GMAIL_APP_PASSWORD, or a verified RESEND_FROM on your domain.";
+  let provider: "gmail" | "resend" | null = null;
 
   if (gmail) {
     status = "ready_gmail";
     provider = "gmail";
-    nextStep = "Partner emails will send via Gmail SMTP first.";
+    nextStep = "Partner emails will send via Gmail SMTP.";
   } else if (resendCanDeliver()) {
     status = "ready_resend";
     provider = "resend";
-    nextStep = "Partner emails will send via Resend first.";
+    nextStep = "Partner emails will send via Resend.";
   }
 
   return {
-    ok: true,
-    canDeliverToSales: true,
+    ok: canDeliver,
+    canDeliverToSales: canDeliver,
     status,
     preferredProvider: provider,
     nextStep,
@@ -94,14 +89,9 @@ export function emailHealthSnapshot() {
       usingTestFrom: testFrom,
       canDeliver: resendCanDeliver(),
     },
-    formsubmit: {
-      configured: true,
-      note: "Fallback to sales@orientlighting.pk when Gmail/Resend are unavailable.",
-    },
-    warning:
-      !gmail && !resendCanDeliver()
-        ? "Using FormSubmit fallback. For long-term reliability, add GMAIL_USER + GMAIL_APP_PASSWORD on Vercel."
-        : null,
+    warning: canDeliver
+      ? null
+      : "No mail provider can reach sales@. Operators review leads at /admin/partners.",
   };
 }
 
@@ -195,96 +185,25 @@ async function sendViaResend(input: SendEmailInput): Promise<SendEmailResult> {
   }
 }
 
-async function sendViaFormSubmit(input: SendEmailInput): Promise<SendEmailResult> {
-  const to = notifyDefault(input.to);
-  if (!to) return { ok: false, error: "No recipient address." };
-
-  const site =
-    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
-    "https://orientlighting.com.pk";
-
-  const payload: Record<string, string> = {
-    _subject: input.subject,
-    _template: "table",
-    _captcha: "false",
-    message: input.text,
-    ...(input.fields || {}),
-  };
-  if (input.replyTo) {
-    payload.email = input.replyTo;
-    payload._replyto = input.replyTo;
-  }
-
-  try {
-    const res = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(to)}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Origin: site,
-        Referer: `${site}/pages/become-our-partner`,
-        "User-Agent":
-          "Mozilla/5.0 (compatible; OrientLightingBot/1.0; +https://orientlighting.com.pk)",
-      },
-      body: JSON.stringify(payload),
-    });
-
-    const body = await res.text().catch(() => "");
-    if (!res.ok) {
-      return {
-        ok: false,
-        provider: "formsubmit",
-        status: res.status,
-        error: `FormSubmit ${res.status}: ${body}`,
-      };
-    }
-
-    try {
-      const json = JSON.parse(body) as { success?: string | boolean; message?: string };
-      if (json.success === false || json.success === "false") {
-        return {
-          ok: false,
-          provider: "formsubmit",
-          error: json.message || body,
-        };
-      }
-      if (json.message && /activation/i.test(json.message)) {
-        return {
-          ok: false,
-          provider: "formsubmit",
-          error: json.message,
-        };
-      }
-    } catch {
-      // non-JSON success body — treat as ok if HTTP 200
-    }
-
-    return { ok: true, provider: "formsubmit" };
-  } catch (err) {
-    const error = err instanceof Error ? err.message : "FormSubmit network error";
-    return { ok: false, provider: "formsubmit", error };
-  }
-}
-
 /**
- * Gmail → verified Resend → FormSubmit (guaranteed path for sales@).
+ * Gmail, then verified Resend. No FormSubmit — Vercel IPs are blocked and
+ * the browser path is not a product delivery channel.
  */
 export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult> {
   if (gmailConfigured()) {
     const gmail = await sendViaGmail(input);
     if (gmail.ok) return gmail;
-    console.error("[email] Gmail failed, trying next provider:", gmail.error);
+    console.error("[email] Gmail failed:", gmail.error);
+    if (!resendCanDeliver()) return gmail;
   }
 
   if (resendCanDeliver()) {
     const resend = await sendViaResend(input);
-    if (resend.ok) return resend;
-    console.error("[email] Resend failed, trying FormSubmit:", resend.error);
+    if (!resend.ok) {
+      console.error("[email] Resend failed:", resend.error);
+    }
+    return resend;
   }
 
-  const form = await sendViaFormSubmit(input);
-  if (!form.ok) {
-    console.error("[email] FormSubmit failed:", form.error);
-  }
-  return form;
+  return { ok: false, error: "No email provider configured." };
 }

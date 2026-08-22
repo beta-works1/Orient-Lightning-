@@ -31,7 +31,13 @@ export type Product = {
   seoDescription: string;
   facets?: { wattage: string[]; colorTemp: string[] };
   publishedAt?: string | null;
+  /** Product-family catalogue PDF URL. Storefront falls back to the site-wide catalogue when null. */
+  catalogueUrl?: string | null;
+  catalogueFilename?: string | null;
+  catalogueStoragePath?: string | null;
 };
+
+export type CatalogueLink = { url: string; filename: string };
 
 export type Collection = {
   id: string;

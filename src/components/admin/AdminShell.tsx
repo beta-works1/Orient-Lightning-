@@ -10,6 +10,7 @@ const NAV = [
   { href: "/admin/products", label: "Products" },
   { href: "/admin/featured", label: "Featured" },
   { href: "/admin/catalogue", label: "Catalogue" },
+  { href: "/admin/partners", label: "Partners" },
   { href: "/admin/products/new", label: "Add product" },
 ] as const;
 
@@ -50,7 +51,9 @@ export function AdminShell({ children }: { children: ReactNode }) {
                       ? pathname === "/admin/products" || pathname.startsWith("/admin/products/")
                       : pathname === item.href || pathname.startsWith(`${item.href}/`);
                   const isAccent =
-                    item.href === "/admin/catalogue" || item.href === "/admin/featured";
+                    item.href === "/admin/catalogue" ||
+                    item.href === "/admin/featured" ||
+                    item.href === "/admin/partners";
                   return (
                     <Link
                       key={item.href}

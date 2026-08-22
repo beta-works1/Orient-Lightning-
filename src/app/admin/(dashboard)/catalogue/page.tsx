@@ -18,8 +18,8 @@ export default async function AdminCataloguePage() {
     <div>
       <h1 className="mb-2 text-2xl font-bold text-white drop-shadow">Catalogue</h1>
       <p className="mb-6 max-w-2xl text-sm text-white/85">
-        Manage the PDF linked from the storefront “Download Catalogue” buttons (homepage, product
-        pages, and related CTAs).
+        Manage the site-wide PDF used when a product has no catalogue of its own. Product-specific
+        PDFs are uploaded on each product’s edit page.
       </p>
       <CatalogueAdminForm current={current} />
     </div>

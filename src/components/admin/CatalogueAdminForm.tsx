@@ -1,22 +1,67 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useState, type FormEvent } from "react";
 import {
+  publishUploadedCatalogue,
   removeCatalogue,
-  uploadCatalogue,
   type CatalogueFormState,
 } from "@/app/admin/actions";
 import { InlineSpinner } from "@/components/admin/AnimatedLoader";
 import type { CatalogueSetting } from "@/lib/catalogueSettings";
+import { uploadAdminFile } from "@/lib/upload/browser";
 
 const empty: CatalogueFormState = {};
 
 export function CatalogueAdminForm({ current }: { current: CatalogueSetting }) {
-  const [uploadState, uploadAction, uploading] = useActionState(uploadCatalogue, empty);
   const [removeState, removeAction, removing] = useActionState(removeCatalogue, empty);
   const [fileName, setFileName] = useState<string>("");
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadOk, setUploadOk] = useState(false);
 
   const active = current.enabled && !!current.url;
+
+  async function onUpload(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const input = e.currentTarget.elements.namedItem("file");
+    const file =
+      input instanceof HTMLInputElement && input.files?.[0] ? input.files[0] : null;
+    if (!file) {
+      setUploadError("Choose a PDF file.");
+      setUploadOk(false);
+      return;
+    }
+
+    setUploading(true);
+    setUploadError(null);
+    setUploadOk(false);
+    try {
+      const uploaded = await uploadAdminFile({
+        purpose: "catalogue",
+        file,
+        folder: "current",
+      });
+      if (!uploaded.ok) {
+        setUploadError(uploaded.error);
+        return;
+      }
+      const published = await publishUploadedCatalogue({
+        url: uploaded.url,
+        filename: uploaded.filename,
+        storagePath: uploaded.path,
+      });
+      if (published.error) {
+        setUploadError(published.error);
+        return;
+      }
+      setUploadOk(true);
+      setFileName("");
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Upload failed. Try again.");
+    } finally {
+      setUploading(false);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -49,7 +94,7 @@ export function CatalogueAdminForm({ current }: { current: CatalogueSetting }) {
       </div>
 
       <form
-        action={uploadAction}
+        onSubmit={(e) => void onUpload(e)}
         className="space-y-4 rounded-xl border border-white/40 bg-white/95 p-5 shadow-xl shadow-black/10 backdrop-blur-sm"
       >
         <div>
@@ -59,12 +104,12 @@ export function CatalogueAdminForm({ current }: { current: CatalogueSetting }) {
           </p>
         </div>
 
-        {(uploadState.error || removeState.error) && (
+        {(uploadError || removeState.error) && (
           <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-            {uploadState.error || removeState.error}
+            {uploadError || removeState.error}
           </p>
         )}
-        {uploadState.ok ? (
+        {uploadOk ? (
           <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
             Catalogue updated.
           </p>
@@ -82,7 +127,11 @@ export function CatalogueAdminForm({ current }: { current: CatalogueSetting }) {
             name="file"
             accept="application/pdf,.pdf"
             required
-            onChange={(e) => setFileName(e.target.files?.[0]?.name || "")}
+            onChange={(e) => {
+              setFileName(e.target.files?.[0]?.name || "");
+              setUploadOk(false);
+              setUploadError(null);
+            }}
             className="block w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-[#0F428F] file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-[#162950]"
           />
           {fileName ? <span className="mt-1 block text-xs text-slate-500">{fileName}</span> : null}

@@ -14,7 +14,9 @@
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
     "security:anon-probe": "tsx --env-file=.env.local scripts/security-anon-probe.ts",
-    "security:crud-qa": "tsx --env-file=.env.local scripts/security-admin-crud-qa.ts"
+    "security:crud-qa": "tsx --env-file=.env.local scripts/security-admin-crud-qa.ts",
+    "test:upload": "tsx --test tests/upload-pipeline.test.ts",
+    "test:upload-smoke": "tsx --env-file=.env.local tests/upload-storage-smoke.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",

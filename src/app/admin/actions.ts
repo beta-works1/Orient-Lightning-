@@ -2,7 +2,7 @@
 
 import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/adminAuth";
 import { createServiceClient } from "@/lib/supabase/admin";
 import {
   buildVariantsFromAdminFields,
@@ -14,34 +14,11 @@ import {
 } from "@/lib/adminProductOptions";
 import type { ProductVariant } from "@/lib/types";
 import type { CatalogueSetting } from "@/lib/catalogueSettings";
-import { detectFileKind, extForKind, mimeForKind } from "@/lib/fileMagic";
+import { removeCatalogueObject } from "@/lib/catalogueStorage";
+import { blobFileName, readFormFile } from "@/lib/upload/formFile";
+import { uploadBytesToBucket } from "@/lib/upload/storage";
+import { messageFromThrown } from "@/lib/upload/validate";
 import { sanitizeHtml } from "@/lib/sanitizeHtml";
-
-function assertAdminEmail(email: string | undefined) {
-  const admin = process.env.ADMIN_EMAIL?.trim().toLowerCase();
-  if (!admin || !email || email.toLowerCase() !== admin) {
-    throw new Error("Unauthorized");
-  }
-}
-
-async function requireAdmin() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  assertAdminEmail(user?.email);
-
-  const sb = createServiceClient();
-  const { data: row, error } = await sb
-    .from("admin_users")
-    .select("email")
-    .ilike("email", user!.email!)
-    .maybeSingle();
-  if (error) throw new Error(`admin allowlist: ${error.message}`);
-  if (!row) throw new Error("Unauthorized");
-
-  return user!;
-}
 
 function revalidateCatalog(handles: string[], collectionHandles: string[]) {
   revalidateTag("catalog");
@@ -94,6 +71,9 @@ function parseForm(formData: FormData) {
     .map((s) => s.trim())
     .filter(Boolean);
   const collectionHandles = formData.getAll("collections").map(String);
+  const catalogueUrl = String(formData.get("catalogueUrl") || "").trim() || null;
+  const catalogueFilename = String(formData.get("catalogueFilename") || "").trim() || null;
+  const catalogueStoragePath = String(formData.get("catalogueStoragePath") || "").trim() || null;
 
   const fieldErrors: Record<string, string> = {};
   if (!title) fieldErrors.title = "Title is required.";
@@ -159,6 +139,9 @@ function parseForm(formData: FormData) {
       wattageSizes,
       images: imagesRaw,
       collectionHandles,
+      catalogueUrl,
+      catalogueFilename,
+      catalogueStoragePath,
     },
   };
 }
@@ -228,6 +211,9 @@ export async function createProduct(
     facets: { wattage: data.wattage, colorTemp: data.colorTemp },
     seo_title: data.title,
     seo_description: stripHtml(data.description).slice(0, 160),
+    catalogue_url: data.catalogueUrl,
+    catalogue_filename: data.catalogueFilename,
+    catalogue_storage_path: data.catalogueStoragePath,
     published_at: data.status === "published" ? new Date().toISOString() : null,
     updated_at: new Date().toISOString(),
   });
@@ -290,6 +276,9 @@ export async function updateProduct(
       facets: { wattage: data.wattage, colorTemp: data.colorTemp },
       seo_title: data.title,
       seo_description: stripHtml(data.description).slice(0, 160),
+      catalogue_url: data.catalogueUrl,
+      catalogue_filename: data.catalogueFilename,
+      catalogue_storage_path: data.catalogueStoragePath,
       published_at:
         data.status === "published"
           ? current.published_at ?? new Date().toISOString()
@@ -299,6 +288,12 @@ export async function updateProduct(
     .eq("id", id);
   if (error) return { error: error.message };
 
+  const previousPath =
+    typeof current.catalogue_storage_path === "string" ? current.catalogue_storage_path : null;
+  if (previousPath && previousPath !== data.catalogueStoragePath) {
+    await removeCatalogueObject(previousPath);
+  }
+
   await syncCollections(id, data.collectionHandles);
   revalidateCatalog([data.handle, current.handle].filter(Boolean), data.collectionHandles);
   redirect(`/admin/products/${id}?saved=1`);
@@ -307,7 +302,11 @@ export async function updateProduct(
 export async function deleteProduct(id: string) {
   await requireAdmin();
   const sb = createServiceClient();
-  const { data: current } = await sb.from("products").select("handle").eq("id", id).maybeSingle();
+  const { data: current } = await sb
+    .from("products")
+    .select("handle, catalogue_storage_path")
+    .eq("id", id)
+    .maybeSingle();
   if (!current) throw new Error("Not found");
 
   const { data: joins } = await sb
@@ -322,6 +321,10 @@ export async function deleteProduct(id: string) {
   const { error } = await sb.from("products").delete().eq("id", id);
   if (error) throw new Error(error.message);
 
+  if (typeof current.catalogue_storage_path === "string") {
+    await removeCatalogueObject(current.catalogue_storage_path);
+  }
+
   revalidateCatalog([current.handle], collectionHandles);
   redirect("/admin/products?deleted=1");
 }
@@ -329,33 +332,23 @@ export async function deleteProduct(id: string) {
 export async function uploadProductImage(
   formData: FormData,
 ): Promise<{ url?: string; error?: string }> {
-  await requireAdmin();
-  const file = formData.get("file");
-  if (!(file instanceof File) || file.size === 0) {
-    return { error: "Choose an image file." };
-  }
-  if (file.size > 5 * 1024 * 1024) {
-    return { error: "Image must be under 5MB." };
+  try {
+    await requireAdmin();
+  } catch (e) {
+    return { error: messageFromThrown(e).error };
   }
 
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const kind = detectFileKind(buffer);
-  if (!kind || kind === "pdf") {
-    return { error: "Only JPG, PNG, WebP, GIF, or AVIF images are allowed." };
-  }
+  const file = await readFormFile(formData);
+  if (!file.ok) return { error: "Choose an image file." };
 
-  const ext = extForKind(kind);
-  const contentType = mimeForKind(kind);
-  const path = `uploads/${Date.now()}-${crypto.randomUUID()}.${ext}`;
-  const sb = createServiceClient();
-  const { error } = await sb.storage.from("product-images").upload(path, buffer, {
-    contentType,
-    upsert: false,
+  const uploaded = await uploadBytesToBucket({
+    purpose: "product-image",
+    bytes: file.bytes,
+    fileName: blobFileName(file.blob, "image"),
+    folder: "uploads",
   });
-  if (error) return { error: "Upload failed. Try again." };
-
-  const { data } = sb.storage.from("product-images").getPublicUrl(path);
-  return { url: data.publicUrl };
+  if (!uploaded.ok) return { error: uploaded.error };
+  return { url: uploaded.url };
 }
 
 export type CatalogueFormState = {
@@ -379,58 +372,17 @@ function revalidateCataloguePaths() {
   revalidatePath("/admin/catalogue");
 }
 
-export async function uploadCatalogue(
-  _prev: CatalogueFormState,
-  formData: FormData,
-): Promise<CatalogueFormState> {
-  await requireAdmin();
-  const file = formData.get("file");
-  if (!(file instanceof File) || file.size === 0) {
-    return { error: "Choose a PDF file." };
-  }
-
-  if (file.size > 25 * 1024 * 1024) return { error: "PDF must be under 25MB." };
-
-  const buffer = Buffer.from(await file.arrayBuffer());
-  if (detectFileKind(buffer) !== "pdf") {
-    return { error: "Only PDF catalogues are allowed." };
-  }
-
-  const sb = createServiceClient();
-  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-") || "catalogue.pdf";
-  const storagePath = `current/${Date.now()}-${safeName}`;
-
-  const { error: uploadError } = await sb.storage.from("catalogues").upload(storagePath, buffer, {
-    contentType: "application/pdf",
-    upsert: true,
-  });
-  if (uploadError) return { error: `Upload failed: ${uploadError.message}` };
-
-  const { data } = sb.storage.from("catalogues").getPublicUrl(storagePath);
-  const value: CatalogueSetting = {
-    enabled: true,
-    url: data.publicUrl,
-    filename: safeName.endsWith(".pdf") ? safeName : `${safeName}.pdf`,
-    storagePath,
-  };
-
-  try {
-    await saveCatalogueSetting(value);
-  } catch (e) {
-    return { error: e instanceof Error ? e.message : "Could not save catalogue setting." };
-  }
-
-  revalidateCataloguePaths();
-  return { ok: true };
-}
-
 export async function removeCatalogue(
   prev: CatalogueFormState,
   formData: FormData,
 ): Promise<CatalogueFormState> {
   void prev;
   void formData;
-  await requireAdmin();
+  try {
+    await requireAdmin();
+  } catch (e) {
+    return { error: messageFromThrown(e).error };
+  }
   const sb = createServiceClient();
 
   const { data: row } = await sb
@@ -440,9 +392,7 @@ export async function removeCatalogue(
     .maybeSingle();
 
   const current = (row?.value || {}) as Partial<CatalogueSetting>;
-  if (current.storagePath) {
-    await sb.storage.from("catalogues").remove([current.storagePath]);
-  }
+  await removeCatalogueObject(current.storagePath);
 
   const value: CatalogueSetting = {
     enabled: false,
@@ -455,6 +405,52 @@ export async function removeCatalogue(
     await saveCatalogueSetting(value);
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Could not remove catalogue." };
+  }
+
+  revalidateCataloguePaths();
+  return { ok: true };
+}
+
+/** After the browser PUTs a PDF via signed URL (`uploadAdminFile`). */
+export async function publishUploadedCatalogue(input: {
+  url: string;
+  filename: string;
+  storagePath: string;
+}): Promise<CatalogueFormState> {
+  try {
+    await requireAdmin();
+  } catch (e) {
+    return { error: messageFromThrown(e).error };
+  }
+
+  if (!input.url || !input.storagePath) {
+    return { error: "Upload did not finish. Try again." };
+  }
+
+  const sb = createServiceClient();
+  const { data: row } = await sb
+    .from("site_settings")
+    .select("value")
+    .eq("key", "catalogue")
+    .maybeSingle();
+  const previous = (row?.value || {}) as Partial<CatalogueSetting>;
+
+  const value: CatalogueSetting = {
+    enabled: true,
+    url: input.url,
+    filename: input.filename || "catalogue.pdf",
+    storagePath: input.storagePath,
+  };
+
+  try {
+    await saveCatalogueSetting(value);
+  } catch (e) {
+    await removeCatalogueObject(input.storagePath);
+    return { error: e instanceof Error ? e.message : "Could not save catalogue setting." };
+  }
+
+  if (previous.storagePath && previous.storagePath !== input.storagePath) {
+    await removeCatalogueObject(previous.storagePath);
   }
 
   revalidateCataloguePaths();

@@ -62,6 +62,7 @@ async function main() {
     "dealers",
     "admin_users",
     "site_settings",
+    "partner_applications",
   ] as const;
 
   for (const table of writeTables) {
@@ -87,6 +88,16 @@ async function main() {
       `anon DELETE ${table} rejected`,
       !!delErr || (count ?? 0) === 0,
       delErr?.message || `deleted count=${count ?? 0}`,
+    );
+  }
+
+  // Partner applications must not be readable or writable with the anon key
+  {
+    const { data, error } = await sb.from("partner_applications").select("*").limit(5);
+    record(
+      "anon cannot SELECT partner_applications",
+      (data?.length ?? 0) === 0,
+      error ? `error=${error.message}` : `rows=${data?.length ?? 0}`,
     );
   }
 

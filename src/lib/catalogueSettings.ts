@@ -1,6 +1,6 @@
 import { unstable_cache } from "next/cache";
 import { createClient } from "@supabase/supabase-js";
-import { SITE } from "@/lib/types";
+import { SITE, type CatalogueLink } from "@/lib/types";
 
 export type CatalogueSetting = {
   enabled: boolean;
@@ -66,11 +66,32 @@ export const getCatalogueSetting = unstable_cache(
 );
 
 /** Public download target — null when admin disabled / removed the catalogue. */
-export async function getCatalogueDownload(): Promise<{
-  url: string;
-  filename: string;
-} | null> {
+export async function getCatalogueDownload(): Promise<CatalogueLink | null> {
   const setting = await getCatalogueSetting();
   if (!setting.enabled || !setting.url) return null;
   return { url: setting.url, filename: setting.filename };
+}
+
+export function productCatalogueLink(product: {
+  catalogueUrl?: string | null;
+  catalogueFilename?: string | null;
+  handle?: string;
+}): CatalogueLink | null {
+  if (!product.catalogueUrl) return null;
+  return {
+    url: product.catalogueUrl,
+    filename: product.catalogueFilename || `${product.handle || "product"}-catalogue.pdf`,
+  };
+}
+
+/**
+ * Product-family PDF when uploaded; otherwise the site-wide catalogue.
+ * Returns null only when this product has no PDF and the global catalogue is unpublished.
+ */
+export async function getCatalogueForProduct(product: {
+  catalogueUrl?: string | null;
+  catalogueFilename?: string | null;
+  handle?: string;
+}): Promise<CatalogueLink | null> {
+  return productCatalogueLink(product) ?? getCatalogueDownload();
 }

@@ -5,11 +5,13 @@ import { useActionState, useMemo, useState } from "react";
 import {
   createProduct,
   updateProduct,
-  uploadProductImage,
   type ProductFormState,
 } from "@/app/admin/actions";
 import { InlineSpinner } from "@/components/admin/AnimatedLoader";
 import { looksLikeHtml } from "@/lib/adminProductOptions";
+import { uploadProductCatalogueFile } from "@/lib/catalogueBrowser";
+import { uploadAdminFile } from "@/lib/upload/browser";
+import { messageFromThrown } from "@/lib/upload/validate";
 
 type CollectionOption = { handle: string; title: string };
 
@@ -35,6 +37,9 @@ type Props = {
     collectionHandles: string[];
     wattagePrices?: WattPriceInitial;
     wattageSizes?: WattSizeInitial;
+    catalogueUrl?: string | null;
+    catalogueFilename?: string | null;
+    catalogueStoragePath?: string | null;
   };
 };
 
@@ -67,6 +72,21 @@ export function ProductForm({ mode, productId, collections, initial }: Props) {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [wattageInput, setWattageInput] = useState(initial?.wattage || "");
+  const [catalogue, setCatalogue] = useState<{
+    url: string;
+    filename: string;
+    storagePath: string;
+  } | null>(
+    initial?.catalogueUrl
+      ? {
+          url: initial.catalogueUrl,
+          filename: initial.catalogueFilename || "catalogue.pdf",
+          storagePath: initial.catalogueStoragePath || "",
+        }
+      : null,
+  );
+  const [catalogueUploading, setCatalogueUploading] = useState(false);
+  const [catalogueError, setCatalogueError] = useState<string | null>(null);
 
   const wattTokens = useMemo(() => wattTokensFromInput(wattageInput), [wattageInput]);
 
@@ -78,21 +98,46 @@ export function ProductForm({ mode, productId, collections, initial }: Props) {
     setUploadError(null);
 
     const uploaded: string[] = [];
-    for (const file of Array.from(fileList)) {
-      const fd = new FormData();
-      fd.set("file", file);
-      const res = await uploadProductImage(fd);
-      if (res.error || !res.url) {
-        setUploadError(res.error || "Upload failed");
-        break;
+    try {
+      for (const file of Array.from(fileList)) {
+        const res = await uploadAdminFile({ purpose: "product-image", file });
+        if (!res.ok) {
+          setUploadError(res.error);
+          break;
+        }
+        uploaded.push(res.url);
       }
-      uploaded.push(res.url);
+      if (uploaded.length) {
+        setImageList((prev) => [...prev, ...uploaded]);
+      }
+    } catch (e) {
+      setUploadError(messageFromThrown(e).error);
+    } finally {
+      setUploading(false);
     }
+  }
 
-    if (uploaded.length) {
-      setImageList((prev) => [...prev, ...uploaded]);
+  async function onCatalogueUpload(fileList: FileList | null) {
+    const file = fileList?.[0];
+    if (!file) return;
+    setCatalogueUploading(true);
+    setCatalogueError(null);
+    try {
+      const res = await uploadProductCatalogueFile(file, productId);
+      if (!res.ok) {
+        setCatalogueError(res.error);
+        return;
+      }
+      setCatalogue({
+        url: res.url,
+        filename: res.filename,
+        storagePath: res.storagePath,
+      });
+    } catch (err) {
+      setCatalogueError(err instanceof Error ? err.message : "Catalogue upload failed");
+    } finally {
+      setCatalogueUploading(false);
     }
-    setUploading(false);
   }
 
   function removeImage(url: string) {
@@ -368,6 +413,74 @@ export function ProductForm({ mode, productId, collections, initial }: Props) {
         {uploadError ? <p className="mt-2 text-xs text-red-600">{uploadError}</p> : null}
       </div>
 
+      <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50/80 p-4">
+        <div>
+          <p className="text-sm font-semibold text-slate-800">Product catalogue (PDF)</p>
+          <p className="mt-0.5 text-xs text-slate-500">
+            Optional spec sheet for this product family. The storefront uses this file on the product
+            page; if none is uploaded, it falls back to the site-wide catalogue.
+          </p>
+        </div>
+
+        {/* Persist on Save only. Remove clears these; updateProduct deletes the old storage object. */}
+        <input type="hidden" name="catalogueUrl" value={catalogue?.url ?? ""} />
+        <input type="hidden" name="catalogueFilename" value={catalogue?.filename ?? ""} />
+        <input type="hidden" name="catalogueStoragePath" value={catalogue?.storagePath ?? ""} />
+
+        {catalogue ? (
+          <div className="rounded-md border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700">
+            <p>
+              <span className="font-medium">File:</span> {catalogue.filename}
+            </p>
+            <a
+              href={catalogue.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-1 inline-flex text-sm font-medium text-[#0F428F] hover:underline"
+            >
+              Open / download
+            </a>
+            <button
+              type="button"
+              onClick={() => {
+                setCatalogue(null);
+                setCatalogueError(null);
+              }}
+              className="ml-3 text-xs font-medium text-red-700 hover:underline"
+            >
+              Remove
+            </button>
+          </div>
+        ) : (
+          <p className="text-xs text-slate-500">
+            No product PDF yet — visitors will get the site-wide catalogue if one is published.
+          </p>
+        )}
+
+        <label className="block text-sm">
+          <span className="mb-1 block font-medium text-slate-700">
+            {catalogue ? "Replace PDF" : "Upload PDF"}
+          </span>
+          <input
+            type="file"
+            accept="application/pdf,.pdf"
+            disabled={catalogueUploading}
+            onChange={(e) => {
+              void onCatalogueUpload(e.target.files);
+              e.target.value = "";
+            }}
+            className="block w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-[#0F428F] file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-[#162950]"
+          />
+        </label>
+        {catalogueUploading ? (
+          <p className="inline-flex items-center gap-2 text-xs text-slate-500">
+            <InlineSpinner className="text-[#0F428F]" />
+            Uploading catalogue…
+          </p>
+        ) : null}
+        {catalogueError ? <p className="text-xs text-red-600">{catalogueError}</p> : null}
+      </div>
+
       <fieldset>
         <legend className="mb-2 text-sm font-medium text-slate-700">Collections</legend>
         <div className="grid max-h-48 grid-cols-1 gap-2 overflow-y-auto rounded-md border border-slate-200 p-3 sm:grid-cols-2">
@@ -395,7 +508,7 @@ export function ProductForm({ mode, productId, collections, initial }: Props) {
 
       <button
         type="submit"
-        disabled={pending || uploading}
+        disabled={pending || uploading || catalogueUploading}
         className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-md bg-[#0F428F] px-4 text-sm font-semibold text-white hover:bg-[#162950] disabled:opacity-60 sm:w-auto"
       >
         {pending ? (
