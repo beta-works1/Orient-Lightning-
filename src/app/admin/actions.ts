@@ -18,6 +18,7 @@ import { removeCatalogueObject } from "@/lib/catalogueStorage";
 import { blobFileName, readFormFile } from "@/lib/upload/formFile";
 import { uploadBytesToBucket } from "@/lib/upload/storage";
 import { messageFromThrown } from "@/lib/upload/validate";
+import { usableProductImageUrls } from "@/lib/productImages";
 import { sanitizeHtml } from "@/lib/sanitizeHtml";
 
 function revalidateCatalog(handles: string[], collectionHandles: string[]) {
@@ -66,10 +67,11 @@ function parseForm(formData: FormData) {
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
-  const imagesRaw = String(formData.get("images") || "")
-    .split("\n")
-    .map((s) => s.trim())
-    .filter(Boolean);
+  const imagesRaw = usableProductImageUrls(
+    String(formData.get("images") || "")
+      .split("\n")
+      .map((s) => s.trim()),
+  );
   const collectionHandles = formData.getAll("collections").map(String);
   const catalogueUrl = String(formData.get("catalogueUrl") || "").trim() || null;
   const catalogueFilename = String(formData.get("catalogueFilename") || "").trim() || null;

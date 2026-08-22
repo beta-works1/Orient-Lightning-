@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { unstable_cache } from "next/cache";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { usableProductImageUrls } from "./productImages";
 import type { BlogPost, Collection, Product, StaticPage } from "./types";
 
 type ProductRow = {
@@ -82,7 +83,7 @@ function mapProduct(
     price: num(row.price),
     compareAtPrice: row.compare_at_price == null ? null : num(row.compare_at_price),
     sku: row.sku ?? "",
-    images: row.images ?? [],
+    images: usableProductImageUrls(row.images),
     collectionIds: collectionHandles,
     variants: row.variants ?? [],
     options: row.options ?? [],

@@ -12,6 +12,7 @@ import { looksLikeHtml } from "@/lib/adminProductOptions";
 import { uploadProductCatalogueFile } from "@/lib/catalogueBrowser";
 import { uploadAdminFile } from "@/lib/upload/browser";
 import { messageFromThrown } from "@/lib/upload/validate";
+import { usableProductImageUrl } from "@/lib/productImages";
 
 type CollectionOption = { handle: string; title: string };
 
@@ -105,7 +106,12 @@ export function ProductForm({ mode, productId, collections, initial }: Props) {
           setUploadError(res.error);
           break;
         }
-        uploaded.push(res.url);
+        const url = usableProductImageUrl(res.url);
+        if (!url) {
+          setUploadError("Upload succeeded but the stored URL is not usable on the storefront.");
+          break;
+        }
+        uploaded.push(url);
       }
       if (uploaded.length) {
         setImageList((prev) => [...prev, ...uploaded]);
@@ -374,7 +380,7 @@ export function ProductForm({ mode, productId, collections, initial }: Props) {
                 className="relative overflow-hidden rounded-lg border border-slate-200 bg-slate-50"
               >
                 <div className="relative aspect-square">
-                  <Image src={url} alt="" fill className="object-contain p-2" sizes="160px" />
+                  <Image src={url} alt="" fill unoptimized className="object-contain p-2" sizes="160px" />
                 </div>
                 <button
                   type="button"
