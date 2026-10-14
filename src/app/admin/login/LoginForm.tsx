@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { InlineSpinner } from "@/components/admin/AnimatedLoader";
 import { loginAdmin, type LoginState } from "@/app/admin/login/actions";
@@ -22,6 +22,10 @@ export default function AdminLoginPage() {
   const error =
     state.error ||
     (unauthorized ? "This account is not authorized for admin access." : null);
+
+  useEffect(() => {
+    if (state.redirectTo) window.location.assign(state.redirectTo);
+  }, [state.redirectTo]);
 
   return (
     <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 py-10">

@@ -1,10 +1,10 @@
 "use server";
 
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 export type LoginState = {
   error?: string;
+  redirectTo?: string;
 };
 
 function safeNext(raw: FormDataEntryValue | null): string {
@@ -47,24 +47,31 @@ export async function loginAdmin(
     return { error: "Invalid email or password." };
   }
 
-  const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) {
-    return { error: "Invalid email or password." };
-  }
-
-  // Double-check allowlist after successful Auth (defense in depth)
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!adminEmail || user?.email?.toLowerCase() !== adminEmail) {
-    try {
-      await supabase.auth.signOut({ scope: "local" });
-    } catch {
-      /* ignore */
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      return { error: "Invalid email or password." };
     }
-    return { error: "Invalid email or password." };
-  }
 
-  redirect(next);
+    // Double-check allowlist after successful Auth (defense in depth)
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!adminEmail || user?.email?.toLowerCase() !== adminEmail) {
+      try {
+        await supabase.auth.signOut({ scope: "local" });
+      } catch {
+        /* ignore */
+      }
+      return { error: "Invalid email or password." };
+    }
+
+    // Let the client perform a full document navigation. Server-action redirects can
+    // leave an old Vercel RSC tree mounted after a deployment or cache invalidation.
+    return { redirectTo: next };
+  } catch (error) {
+    console.error("[admin login]", error);
+    return { error: "Could not sign in right now. Please try again." };
+  }
 }
