@@ -63,6 +63,9 @@ export async function inspectBrowserFile(
 
 export function messageFromThrown(error: unknown): { error: string; code: UploadErr["code"] } {
   const raw = error instanceof Error ? error.message : String(error || "Upload failed");
+  if (/admin_users allowlist entry is missing/i.test(raw)) {
+    return { error: "This account is not enabled for admin access. Contact the site owner.", code: "auth" };
+  }
   if (/unauthorized/i.test(raw)) {
     return { error: "Session expired. Sign in again and retry.", code: "auth" };
   }

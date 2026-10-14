@@ -95,6 +95,10 @@ test("readFormFile duck-types Blob/File and rejects strings", async () => {
 
 test("messageFromThrown maps auth and 413", () => {
   assert.equal(messageFromThrown(new Error("Unauthorized")).code, "auth");
+  assert.equal(
+    messageFromThrown(new Error("Unauthorized: admin_users allowlist entry is missing")).error,
+    "This account is not enabled for admin access. Contact the site owner.",
+  );
   assert.equal(messageFromThrown(new Error("Body exceeded 1 MB limit.")).code, "too_large");
   assert.equal(messageFromThrown(new Error("Failed to fetch")).code, "network");
 });

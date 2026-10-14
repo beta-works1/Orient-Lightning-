@@ -67,6 +67,24 @@ export async function loginAdmin(
       return { error: "Invalid email or password." };
     }
 
+    // Signing in is not enough: mutations also require the database allowlist.
+    // Check it here so a missing entry does not look like an expired session
+    // only after the administrator attempts to save a change.
+    const { data: admin, error: allowlistError } = await supabase
+      .from("admin_users")
+      .select("email")
+      .ilike("email", user.email!)
+      .maybeSingle();
+    if (allowlistError || !admin) {
+      if (allowlistError) console.error("[admin login allowlist]", allowlistError.message);
+      await supabase.auth.signOut({ scope: "local" });
+      return {
+        error: allowlistError
+          ? "Could not verify admin access. Please try again."
+          : "This account is not enabled for admin access. Contact the site owner.",
+      };
+    }
+
     // Let the client perform a full document navigation. Server-action redirects can
     // leave an old Vercel RSC tree mounted after a deployment or cache invalidation.
     return { redirectTo: next };
