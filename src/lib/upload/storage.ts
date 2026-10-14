@@ -1,6 +1,12 @@
 import { createServiceClient } from "@/lib/supabase/admin";
 import { mimeForKind, type DetectedFileKind } from "@/lib/fileMagic";
 import {
+  createR2SignedUploadSlot,
+  r2Configured,
+  removeR2Object,
+  uploadBytesToR2,
+} from "@/lib/upload/r2";
+import {
   UPLOAD_PURPOSES,
   type StorageUploadPurpose,
   type UploadErr,
@@ -67,6 +73,16 @@ export async function createSignedUploadSlot(input: {
         ? mimeForKind("pdf")
         : mimeForKind((ext === "jpg" ? "jpeg" : ext) as Exclude<DetectedFileKind, null | "pdf">);
 
+  // Prefer Cloudflare R2 when configured so product media does not burn Supabase egress.
+  if (r2Configured()) {
+    return createR2SignedUploadSlot({
+      purpose: input.purpose,
+      path,
+      filename,
+      contentType,
+    });
+  }
+
   try {
     const sb = createServiceClient();
     const { data, error } = await sb.storage.from(spec.bucket).createSignedUploadUrl(path, {
@@ -88,8 +104,12 @@ export async function createSignedUploadSlot(input: {
     };
   } catch (e) {
     const message = e instanceof Error ? e.message : "Could not create upload URL.";
-    if (/Missing NEXT_PUBLIC_SUPABASE|SUPABASE_SERVICE_ROLE/i.test(message)) {
-      return { ok: false, error: "Storage is not configured on the server (missing Supabase env).", code: "config" };
+    if (/Missing NEXT_PUBLIC_SUPABASE|SUPABASE_SERVICE_ROLE|R2_/i.test(message)) {
+      return {
+        ok: false,
+        error: "Storage is not configured on the server (missing R2 or Supabase env).",
+        code: "config",
+      };
     }
     return { ok: false, error: message, code: "storage" };
   }
@@ -109,6 +129,16 @@ export async function uploadBytesToBucket(input: {
   const spec = UPLOAD_PURPOSES[input.purpose];
   const path = objectPath(input.purpose, input.folder, inspected.filename);
 
+  if (r2Configured()) {
+    return uploadBytesToR2({
+      purpose: input.purpose,
+      path,
+      filename: inspected.filename,
+      contentType: inspected.contentType,
+      bytes: inspected.bytes,
+    });
+  }
+
   try {
     const sb = createServiceClient();
     const { error } = await sb.storage.from(spec.bucket).upload(path, inspected.bytes, {
@@ -127,8 +157,12 @@ export async function uploadBytesToBucket(input: {
     };
   } catch (e) {
     const message = e instanceof Error ? e.message : "Upload failed.";
-    if (/Missing NEXT_PUBLIC_SUPABASE|SUPABASE_SERVICE_ROLE/i.test(message)) {
-      return { ok: false, error: "Storage is not configured on the server (missing Supabase env).", code: "config" };
+    if (/Missing NEXT_PUBLIC_SUPABASE|SUPABASE_SERVICE_ROLE|R2_/i.test(message)) {
+      return {
+        ok: false,
+        error: "Storage is not configured on the server (missing R2 or Supabase env).",
+        code: "config",
+      };
     }
     return { ok: false, error: message, code: "storage" };
   }
@@ -139,10 +173,18 @@ export async function removeStorageObject(
   storagePath: string | null | undefined,
 ): Promise<void> {
   if (!storagePath) return;
+  if (r2Configured() || storagePath.startsWith("product-images/") || storagePath.startsWith("catalogues/")) {
+    await removeR2Object(purpose, storagePath);
+    if (r2Configured()) return;
+  }
   const spec = UPLOAD_PURPOSES[purpose];
-  const sb = createServiceClient();
-  const { error } = await sb.storage.from(spec.bucket).remove([storagePath]);
-  if (error) {
-    console.error(`[upload] remove ${spec.bucket}/${storagePath} failed:`, error.message);
+  try {
+    const sb = createServiceClient();
+    const { error } = await sb.storage.from(spec.bucket).remove([storagePath]);
+    if (error) {
+      console.error(`[upload] remove ${spec.bucket}/${storagePath} failed:`, error.message);
+    }
+  } catch (e) {
+    console.error(`[upload] remove ${spec.bucket}/${storagePath} failed:`, e);
   }
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useState } from "react";
 import {
   createProduct,
   updateProduct,
@@ -88,6 +88,13 @@ export function ProductForm({ mode, productId, collections, initial }: Props) {
   );
   const [catalogueUploading, setCatalogueUploading] = useState(false);
   const [catalogueError, setCatalogueError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (state.redirectTo) {
+      // A document navigation avoids stale RSC/action state after Vercel cache invalidation.
+      window.location.assign(state.redirectTo);
+    }
+  }, [state.redirectTo]);
 
   const wattTokens = useMemo(() => wattTokensFromInput(wattageInput), [wattageInput]);
 

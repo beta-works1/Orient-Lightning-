@@ -25,7 +25,7 @@ const securityHeaders = [
       // Footer Google Maps embed (maps.google.com → www.google.com)
       "frame-src 'self' https://maps.google.com https://www.google.com",
       "object-src 'none'",
-      "img-src 'self' data: blob: https://*.supabase.co https://cdn.shopify.com https://orientlighting.com.pk https://*.tile.openstreetmap.org",
+      "img-src 'self' data: blob: https://*.supabase.co https://*.r2.dev https://media.orientlighting.com.pk https://cdn.shopify.com https://orientlighting.com.pk https://*.tile.openstreetmap.org",
       "font-src 'self' data:",
       "style-src 'self' 'unsafe-inline'",
       // Dev: 'unsafe-eval' required by Next.js React Refresh. Prod stays strict.
@@ -33,8 +33,8 @@ const securityHeaders = [
         ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
         : "script-src 'self' 'unsafe-inline'",
       isDev
-        ? "connect-src 'self' ws: wss: https://*.supabase.co wss://*.supabase.co https://*.tile.openstreetmap.org"
-        : "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.tile.openstreetmap.org",
+        ? "connect-src 'self' ws: wss: https://*.supabase.co wss://*.supabase.co https://*.r2.cloudflarestorage.com https://*.r2.dev https://*.tile.openstreetmap.org"
+        : "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.r2.cloudflarestorage.com https://*.r2.dev https://*.tile.openstreetmap.org",
       "worker-src 'self' blob:",
     ].join("; "),
   },
@@ -75,7 +75,15 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
-        hostname: "drywaizxvygxescnghjr.supabase.co",
+        hostname: "tmqcejwtvynbvsgaubtm.supabase.co",
+      },
+      {
+        protocol: "https",
+        hostname: "pub-54c35d6968304ce3ab9834755206421d.r2.dev",
+      },
+      {
+        protocol: "https",
+        hostname: "media.orientlighting.com.pk",
       },
       {
         protocol: "https",

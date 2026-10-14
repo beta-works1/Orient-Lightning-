@@ -4,9 +4,11 @@ function hostAllowed(hostname: string): boolean {
   const host = hostname.toLowerCase();
   return (
     host.endsWith(".supabase.co") ||
+    host.endsWith(".r2.dev") ||
     host === "cdn.shopify.com" ||
     host === "orientlighting.com.pk" ||
-    host.endsWith(".orientlighting.com.pk")
+    host.endsWith(".orientlighting.com.pk") ||
+    host === "media.orientlighting.com.pk"
   );
 }
 
