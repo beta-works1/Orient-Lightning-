@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath, revalidateTag } from "next/cache";
-import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/adminAuth";
 import { createServiceClient } from "@/lib/supabase/admin";
 import {
@@ -35,6 +34,7 @@ export type ProductFormState = {
   ok?: boolean;
   error?: string;
   fieldErrors?: Record<string, string>;
+  redirectTo?: string;
 };
 
 function slugify(input: string) {
@@ -167,7 +167,7 @@ async function syncCollections(productId: string, collectionHandles: string[]) {
   }
 }
 
-export async function createProduct(
+async function createProductUnsafe(
   _prev: ProductFormState,
   formData: FormData,
 ): Promise<ProductFormState> {
@@ -223,10 +223,22 @@ export async function createProduct(
 
   await syncCollections(id, data.collectionHandles);
   revalidateCatalog([data.handle], data.collectionHandles);
-  redirect(`/admin/products/${id}?saved=1`);
+  return { ok: true, redirectTo: `/admin/products/${id}?saved=1` };
 }
 
-export async function updateProduct(
+export async function createProduct(
+  prev: ProductFormState,
+  formData: FormData,
+): Promise<ProductFormState> {
+  try {
+    return await createProductUnsafe(prev, formData);
+  } catch (error) {
+    console.error("[admin createProduct]", error);
+    return { error: messageFromThrown(error).error };
+  }
+}
+
+async function updateProductUnsafe(
   id: string,
   _prev: ProductFormState,
   formData: FormData,
@@ -298,10 +310,29 @@ export async function updateProduct(
 
   await syncCollections(id, data.collectionHandles);
   revalidateCatalog([data.handle, current.handle].filter(Boolean), data.collectionHandles);
-  redirect(`/admin/products/${id}?saved=1`);
+  return { ok: true, redirectTo: `/admin/products/${id}?saved=1` };
 }
 
-export async function deleteProduct(id: string) {
+export async function updateProduct(
+  id: string,
+  prev: ProductFormState,
+  formData: FormData,
+): Promise<ProductFormState> {
+  try {
+    return await updateProductUnsafe(id, prev, formData);
+  } catch (error) {
+    console.error("[admin updateProduct]", error);
+    return { error: messageFromThrown(error).error };
+  }
+}
+
+export type DeleteProductState = {
+  ok?: boolean;
+  error?: string;
+  redirectTo?: string;
+};
+
+async function deleteProductUnsafe(id: string): Promise<DeleteProductState> {
   await requireAdmin();
   const sb = createServiceClient();
   const { data: current } = await sb
@@ -328,7 +359,16 @@ export async function deleteProduct(id: string) {
   }
 
   revalidateCatalog([current.handle], collectionHandles);
-  redirect("/admin/products?deleted=1");
+  return { ok: true, redirectTo: "/admin/products?deleted=1" };
+}
+
+export async function deleteProduct(id: string): Promise<DeleteProductState> {
+  try {
+    return await deleteProductUnsafe(id);
+  } catch (error) {
+    console.error("[admin deleteProduct]", error);
+    return { error: messageFromThrown(error).error };
+  }
 }
 
 export async function uploadProductImage(
@@ -464,7 +504,7 @@ export type FeaturedFormState = {
   error?: string;
 };
 
-export async function saveFeaturedWeek(
+async function saveFeaturedWeekUnsafe(
   _prev: FeaturedFormState,
   formData: FormData,
 ): Promise<FeaturedFormState> {
@@ -493,4 +533,16 @@ export async function saveFeaturedWeek(
   revalidatePath("/");
   revalidatePath("/admin/featured");
   return { ok: true };
+}
+
+export async function saveFeaturedWeek(
+  prev: FeaturedFormState,
+  formData: FormData,
+): Promise<FeaturedFormState> {
+  try {
+    return await saveFeaturedWeekUnsafe(prev, formData);
+  } catch (error) {
+    console.error("[admin saveFeaturedWeek]", error);
+    return { error: messageFromThrown(error).error };
+  }
 }
