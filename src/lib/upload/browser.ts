@@ -3,7 +3,7 @@ import type { StorageUploadPurpose, UploadResult } from "@/lib/upload/types";
 import { formatStorageHttpError, inspectBrowserFile, messageFromThrown } from "@/lib/upload/validate";
 
 /**
- * Browser upload: validate locally, ask the server for a signed URL, PUT to Supabase.
+ * Browser upload: validate locally, ask the server for a signed URL, PUT to R2 (or Supabase).
  * Import only from Client Components. Partner form / per-product PDFs should call this.
  */
 export async function uploadAdminFile(opts: {

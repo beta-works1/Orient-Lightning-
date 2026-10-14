@@ -32,11 +32,11 @@ function withAdminSecurityHeaders(res: NextResponse) {
         "form-action 'self'",
         "frame-ancestors 'none'",
         "object-src 'none'",
-        "img-src 'self' data: blob: https://*.supabase.co",
+        "img-src 'self' data: blob: https://*.supabase.co https://*.r2.dev https://media.orientlighting.com.pk",
         "font-src 'self' data:",
         "style-src 'self' 'unsafe-inline'",
         "script-src 'self' 'unsafe-inline'",
-        "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
+        "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.r2.cloudflarestorage.com https://*.r2.dev",
       ].join("; "),
     );
   }
@@ -50,11 +50,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const requestHeaders = new Headers(request.headers);
-  requestHeaders.set("x-orient-admin", "1");
-
   // Logout must not refresh/re-attach session cookies from updateSession
   if (pathname === "/admin/logout") {
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set("x-orient-admin", "1");
     return withAdminSecurityHeaders(
       NextResponse.next({ request: { headers: requestHeaders } }),
     );
@@ -62,6 +61,12 @@ export async function middleware(request: NextRequest) {
 
   const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
   const { supabase, supabaseResponse, user } = await updateSession(request);
+
+  // updateSession replaces expired tokens in request.cookies. Snapshot the
+  // headers afterwards so Server Components and Actions receive those tokens,
+  // rather than the stale Cookie header that middleware just authenticated.
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-orient-admin", "1");
 
   const copyCookies = (res: NextResponse) => {
     supabaseResponse.cookies.getAll().forEach((c) => res.cookies.set(c));
